@@ -95,6 +95,7 @@ class DataAnalyzer:
 if __name__ == "__main__":
     # File path to the dataset
     file_path = './original_data/trainingset.csv'
+    # file_path = './original_data/testset.csv'
     
     # Output PDF file path
     output_directory = "./out/"
