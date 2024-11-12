@@ -136,5 +136,27 @@ simulation_configs = {
         },
         "metrics": ["MSE", "MAE", "RMSE", "R2"],
         "output_pdf": "performance_tuning_milestone1.pdf"
+    },
+    "milestone1-take2": {
+        "dataset": {
+            "path": "./original_data/trainingset.csv",
+            "target_column": "ClaimAmount",
+            "drop_columns": ["rowIndex"]
+        },
+        "models": {
+            "RandomForest": {
+                "pipeline": {
+                    "scaler": True,
+                    "model": "RandomForestRegressor"
+                },
+                "params": {
+                    "model__n_estimators": [50, 100],
+                    "model__max_depth": [None, 10, 20],
+                    "model__min_samples_split": [2, 5]
+                }
+            }
+        },
+        "metrics": ["MSE", "MAE", "RMSE", "R2"],
+        "output_pdf": "performance_tuning_milestone1.pdf"
     }
 }
