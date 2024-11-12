@@ -9,33 +9,38 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
 # Load dataset
-data = pd.read_csv("./original_data/trainingset.csv")
+all_data = pd.read_csv("./original_data/trainingset.csv")
+claim_data = pd.read_csv("./edited_data/non_zero_claims.csv")
+
 
 # Convert ClaimAmount to binary for classification in Stage 1
-data["HasClaim"] = data["ClaimAmount"].apply(lambda x: 0 if x == 0 else 1)
+all_data["HasClaim"] = all_data["ClaimAmount"].apply(lambda x: 0 if x == 0 else 1)
 
 # Separate features and target variables
-X = data.drop(columns=["ClaimAmount", "HasClaim"])
-y_classification = data["HasClaim"]
-y_regression = data["ClaimAmount"]
+X_all = all_data.drop(columns=["ClaimAmount", "HasClaim"])
+y_all_classification = all_data["HasClaim"]
+y_all_regression = all_data["ClaimAmount"]
 
 # Split dataset for both classification and regression stages
-X_train, X_test, y_class_train, y_class_test = train_test_split(X, y_classification, test_size=0.25, random_state=42)
+# Split dataset for both classification and regression stages
+X_all_train, X_all_test, y_class_train, y_class_test, y_regression_train, y_regression_test = train_test_split(
+    X_all, y_all_classification, y_all_regression, test_size=0.25, random_state=42
+)
 
 # Scale features
 scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+X_all_train = scaler.fit_transform(X_all_train)
+X_all_test = scaler.transform(X_all_test)
 
 
 # Stage 1 - Classification Model to predict if a claim exists
-# classifier = RandomForestClassifier(class_weight="balanced_subsample", random_state=42)
-classifier = LogisticRegression(C=0.1, penalty="l2", class_weight="balanced", solver="saga", random_state=42)
+classifier = RandomForestClassifier(class_weight="balanced_subsample", random_state=42)
+# classifier = LogisticRegression(C=0.1, penalty="l2", class_weight="balanced", solver="saga", random_state=42)
 # classifier = KNeighborsClassifier(metric='euclidean', n_neighbors=1)
-classifier.fit(X_train, y_class_train)
+classifier.fit(X_all_train, y_class_train)
 
 # Predict the existence of a claim
-y_class_pred = classifier.predict(X_test)
+y_class_pred = classifier.predict(X_all_test)
 
 # Evaluate Classification Model
 f1 = f1_score(y_class_test, y_class_pred)
@@ -44,20 +49,21 @@ print(f"Classification F1 Score: {f1:.4f}")
 
 # Stage 2 - Regression Model to predict claim amount if a claim exists
 # Filter the training and testing data where a claim is predicted
-claim_data = pd.read_csv("./edited_data/non_zero_claims.csv")
 X_claim = claim_data.drop(columns=["ClaimAmount"])
 y_claim = claim_data["ClaimAmount"]
 
-X_train_claims, X_test_claims, y_train_claims, y_test_claims = train_test_split(X_claim, y_claim, test_size=0.2)
+X_claim_train, _, y_claim_train, _ = train_test_split(X_claim, y_claim, test_size=0.2)
 
 # Apply scaling for regression (if needed)
 scaler = StandardScaler()
-X_train_claims = scaler.fit_transform(X_train_claims)
-X_test_claims = scaler.transform(X_test_claims)
+X_claim_train = scaler.fit_transform(X_claim_train)
 
 # Initialize the Regression Model
 regressor = RandomForestRegressor(random_state=42)
-regressor.fit(X_train_claims, y_train_claims)
+regressor.fit(X_claim_train, y_claim_train)
+
+X_test_claims = X_all_test[y_class_pred == 1]
+y_test_claims = y_regression_test[y_class_pred == 1]
 
 # Predict claim amounts on instances with predicted claims
 y_pred_claim_amount = regressor.predict(X_test_claims)
