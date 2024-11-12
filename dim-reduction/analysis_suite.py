@@ -109,11 +109,11 @@ for model_name, model_info in config['models'].items():
     if model_info['pipeline']['scaler']:
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
-            ('model', eval(model_info['pipeline']['model'])(random_state=42))
+            ('model', eval(model_info['pipeline']['model'])())
         ])
     else:
         pipeline = Pipeline([
-            ('model', eval(model_info['pipeline']['model'])(random_state=42))
+            ('model', eval(model_info['pipeline']['model'])())
         ])
 
     param_grid = model_info['params']
