@@ -171,7 +171,7 @@ for model_name, model_info in config['models'].items():
                             best_models[metric] = copy.deepcopy(trained_pipeline)
 
                             # Save the best model for this metric
-                            model_path = os.path.join(output_dir, f"{model_name}_best_{metric}-{score}.pkl")
+                            model_path = os.path.join(output_dir, f"{model_name}_best_{metric}.pkl")
                             save_model(best_models[metric], model_path)
                             log_message = f"Updated best model saved to {model_path}"
                             print(log_message)
