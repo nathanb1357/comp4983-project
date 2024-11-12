@@ -2,8 +2,10 @@
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import f1_score, mean_absolute_error, mean_squared_error, r2_score
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
 # Load dataset
@@ -20,8 +22,16 @@ y_regression = data["ClaimAmount"]
 # Split dataset for both classification and regression stages
 X_train, X_test, y_class_train, y_class_test = train_test_split(X, y_classification, test_size=0.25, random_state=42)
 
+# Scale features
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+
 # Stage 1 - Classification Model to predict if a claim exists
-classifier = RandomForestClassifier(class_weight="balanced_subsample", random_state=42)
+# classifier = RandomForestClassifier(class_weight="balanced_subsample", random_state=42)
+# classifier = LogisticRegression(C=0.01, penalty="l1", class_weight="balanced", solver="liblinear", random_state=42)
+classifier = KNeighborsClassifier(metric='euclidean', n_neighbors=1)
 classifier.fit(X_train, y_class_train)
 
 # Predict the existence of a claim
@@ -30,6 +40,7 @@ y_class_pred = classifier.predict(X_test)
 # Evaluate Classification Model
 f1 = f1_score(y_class_test, y_class_pred)
 print(f"Classification F1 Score: {f1:.4f}")
+
 
 # Stage 2 - Regression Model to predict claim amount if a claim exists
 # Filter the training and testing data where a claim is predicted
