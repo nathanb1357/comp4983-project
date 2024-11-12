@@ -92,6 +92,8 @@ for model_file in os.listdir(models_dir):
             }
 
 # Save the map.json file
+from pprint import pprint
+pprint(model_param_map)
 with open(map_file_path, "w") as map_file:
     json.dump(model_param_map, map_file, indent=4)
     print(f"Saved parameter map to {map_file_path}")
