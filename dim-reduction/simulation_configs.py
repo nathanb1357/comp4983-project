@@ -18,7 +18,7 @@ simulation_configs = {
                 }
             }
         },
-        "metrics": ["MSE", "MAE", "R2"],
+        "metrics": ["MSE", "MAE", "RMSE", "R2"],
         "output_pdf": "performance_tuning_default.pdf"
     },
     "svr_simulation": {
@@ -61,7 +61,7 @@ simulation_configs = {
                 }
             }
         },
-        "metrics": ["MSE", "MAE", "R2"],
+        "metrics": ["MSE", "MAE", "RMSE", "R2"],
         "output_pdf": "performance_tuning_default.pdf"
     },
 
