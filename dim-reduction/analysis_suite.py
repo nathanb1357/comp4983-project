@@ -1,3 +1,5 @@
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Manager
 from data_preprocessing import load_and_preprocess_data
 from evaluation import plot_and_save_metrics
 from utils import save_model
@@ -52,6 +54,23 @@ def log_progress(model_name, param_index, total_params, params, scores, log_file
         log_file.write(log_message + "\n")
 
 
+def evaluate_pipeline(X, y, pipeline, params, metrics):
+    """
+    Train and evaluate the pipeline for given parameters.
+    """
+    pipeline.set_params(**params)
+    pipeline.fit(X, y)
+    y_pred = pipeline.predict(X)
+
+    scores = {
+        "MSE": mean_squared_error(y, y_pred),
+        "RMSE": np.sqrt(mean_squared_error(y, y_pred)),
+        "MAE": mean_absolute_error(y, y_pred),
+        "R2": r2_score(y, y_pred)
+    }
+    return {"params": params, "scores": scores, "pipeline": copy.deepcopy(pipeline)}
+
+
 def summarize_findings(best_models, best_scores, X, y, log_file_path):
     """
     Summarize the best-performing models for each metric and evaluate their performance across all metrics.
@@ -97,9 +116,12 @@ log_file_path = os.path.join(output_dir, "progress.log")
 # Load and preprocess data
 X, y = load_and_preprocess_data(config)
 
-# Train and evaluate models
-best_models = {metric: None for metric in config['metrics']}  # Store best models for each metric
-best_scores = {metric: float('inf') if metric in ["MSE", "RMSE", "MAE"] else float('-inf') for metric in config['metrics']}  # Track best scores for each metric
+# Shared resources for managing best models and scores
+manager = Manager()
+best_models = manager.dict({metric: None for metric in config['metrics']})  # Shared best models
+best_scores = manager.dict({metric: float('inf') if metric in ["MSE", "RMSE", "MAE"] else float('-inf') for metric in config['metrics']})  # Shared best scores
+lock = manager.Lock()  # Lock to prevent race conditions
+
 performance_data = {metric: {"params": [], "scores": []} for metric in config['metrics']}
 
 for model_name, model_info in config['models'].items():
@@ -121,46 +143,43 @@ for model_name, model_info in config['models'].items():
 
     total_params = len(param_list)
 
-    for param_index, params in enumerate(param_list, start=1):
-        # Set parameters for the current iteration
-        pipeline.set_params(**params)
-
-        # Train the model
-        pipeline.fit(X, y)
-
-        # Predict and calculate scores for all metrics
-        y_pred = pipeline.predict(X)
-        scores = {
-            "MSE": mean_squared_error(y, y_pred),
-            "RMSE": np.sqrt(mean_squared_error(y, y_pred)),
-            "MAE": mean_absolute_error(y, y_pred),
-            "R2": r2_score(y, y_pred)
+    # Parallelize grid search
+    with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+        futures = {
+            executor.submit(evaluate_pipeline, X, y, copy.deepcopy(pipeline), params, config['metrics']): params
+            for params in param_list
         }
 
-        # Log metrics for the current parameter set
-        log_progress(model_name, param_index, total_params, params, scores, log_file_path)
+        for param_index, future in enumerate(as_completed(futures), start=1):
+            try:
+                result = future.result()
+                params, scores, trained_pipeline = result["params"], result["scores"], result["pipeline"]
 
-        # Save performance data for plotting
-        for metric, score in scores.items():
-            performance_data[metric]["params"].append(params)
-            performance_data[metric]["scores"].append(score)
+                # Log metrics for the current parameter set
+                log_progress(model_name, param_index, total_params, params, scores, log_file_path)
 
-            # Update best model for this metric
-            if ((metric in ["MSE", "RMSE", "MAE"] and score < best_scores[metric]) or
-                (metric == "R2" and score > best_scores[metric])):  # Minimize MSE/RMSE/MAE, maximize R2
-                best_scores[metric] = score
-                best_models[metric] = copy.deepcopy(pipeline)
+                # Save performance data for plotting
+                for metric, score in scores.items():
+                    performance_data[metric]["params"].append(params)
+                    performance_data[metric]["scores"].append(score)
 
-                # Debugging: Log when best model is updated
-                print(f"[DEBUG] New best model for {metric} with score: {score:.4f} and params: {params}")
+                    # Synchronize access to shared resources
+                    with lock:
+                        if ((metric in ["MSE", "RMSE", "MAE"] and score < best_scores[metric]) or
+                            (metric == "R2" and score > best_scores[metric])):  # Minimize MSE/RMSE/MAE, maximize R2
+                            best_scores[metric] = score
+                            best_models[metric] = copy.deepcopy(trained_pipeline)
 
-                # Save the best model for this metric
-                model_path = os.path.join(output_dir, f"{model_name}_best_{metric}-{score}.pkl")
-                save_model(best_models[metric], model_path)
-                log_message = f"Updated best model saved to {model_path}"
-                print(log_message)
-                with open(log_file_path, "a") as log_file:
-                    log_file.write(log_message + "\n")
+                            # Save the best model for this metric
+                            model_path = os.path.join(output_dir, f"{model_name}_best_{metric}-{score}.pkl")
+                            save_model(best_models[metric], model_path)
+                            log_message = f"Updated best model saved to {model_path}"
+                            print(log_message)
+                            with open(log_file_path, "a") as log_file:
+                                log_file.write(log_message + "\n")
+
+            except Exception as e:
+                print(f"Error during evaluation: {e}")
 
 # Plot and save metrics
 pdf_path = os.path.join(output_dir, config['output_pdf'])
