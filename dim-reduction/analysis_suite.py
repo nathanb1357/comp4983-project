@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import ParameterGrid
 import os
+import copy
 import numpy as np
 from datetime import datetime
 from simulation_configs import simulation_configs
@@ -51,6 +52,43 @@ def log_progress(model_name, param_index, total_params, params, scores, log_file
         log_file.write(log_message + "\n")
 
 
+def summarize_findings(best_models, best_scores, X, y, log_file_path):
+    """
+    Summarize the best-performing models for each metric and evaluate their performance across all metrics.
+
+    Parameters:
+    - best_models: Dictionary of best models for each metric.
+    - best_scores: Dictionary of best scores for each metric.
+    - X: Features to evaluate the best models.
+    - y: True labels to evaluate the best models.
+    - log_file_path: File to append the summary.
+    """
+    summary = "\nFinal Results Summary:\n"
+    for metric, best_model in best_models.items():
+        if best_model is None:
+            continue
+
+        # Retrieve the best parameters and evaluate across all metrics
+        best_params = best_model.named_steps['model'].get_params()  # Extract parameters of the model step
+        y_pred = best_model.predict(X)
+        scores = {
+            "MSE": mean_squared_error(y, y_pred),
+            "RMSE": np.sqrt(mean_squared_error(y, y_pred)),
+            "MAE": mean_absolute_error(y, y_pred),
+            "R2": r2_score(y, y_pred)
+        }
+
+        summary += f"\nBest Model for {metric}:\n"
+        summary += f"  Parameters: {best_params}\n"
+        summary += f"  Performance:\n"
+        for score_metric, score_value in scores.items():
+            summary += f"    {score_metric}: {score_value:.4f}\n"
+
+    print(summary)
+    with open(log_file_path, "a") as log_file:
+        log_file.write(summary)
+
+
 # Main script
 config_name, config = select_config()
 output_dir = get_output_directory(config_name)
@@ -61,7 +99,7 @@ X, y = load_and_preprocess_data(config)
 
 # Train and evaluate models
 best_models = {metric: None for metric in config['metrics']}  # Store best models for each metric
-best_scores = {metric: float('inf') if metric in ["MSE", "MAE"] else float('-inf') for metric in config['metrics']}  # Track best scores for each metric
+best_scores = {metric: float('inf') if metric in ["MSE", "RMSE", "MAE"] else float('-inf') for metric in config['metrics']}  # Track best scores for each metric
 performance_data = {metric: {"params": [], "scores": []} for metric in config['metrics']}
 
 for model_name, model_info in config['models'].items():
@@ -71,11 +109,11 @@ for model_name, model_info in config['models'].items():
     if model_info['pipeline']['scaler']:
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
-            ('model', eval(model_info['pipeline']['model'])(random_state=42 if model_name == "RandomForest" else None))
+            ('model', eval(model_info['pipeline']['model'])(random_state=42))
         ])
     else:
         pipeline = Pipeline([
-            ('model', eval(model_info['pipeline']['model'])(random_state=42 if model_name == "RandomForest" else None))
+            ('model', eval(model_info['pipeline']['model'])(random_state=42))
         ])
 
     param_grid = model_info['params']
@@ -94,6 +132,7 @@ for model_name, model_info in config['models'].items():
         y_pred = pipeline.predict(X)
         scores = {
             "MSE": mean_squared_error(y, y_pred),
+            "RMSE": np.sqrt(mean_squared_error(y, y_pred)),
             "MAE": mean_absolute_error(y, y_pred),
             "R2": r2_score(y, y_pred)
         }
@@ -107,13 +146,16 @@ for model_name, model_info in config['models'].items():
             performance_data[metric]["scores"].append(score)
 
             # Update best model for this metric
-            if ((metric in ["MSE", "MAE"] and score < best_scores[metric]) or
-                (metric == "R2" and score > best_scores[metric])):  # Minimize MSE/MAE, maximize R2
+            if ((metric in ["MSE", "RMSE", "MAE"] and score < best_scores[metric]) or
+                (metric == "R2" and score > best_scores[metric])):  # Minimize MSE/RMSE/MAE, maximize R2
                 best_scores[metric] = score
-                best_models[metric] = pipeline
+                best_models[metric] = copy.deepcopy(pipeline)
+
+                # Debugging: Log when best model is updated
+                print(f"[DEBUG] New best model for {metric} with score: {score:.4f} and params: {params}")
 
                 # Save the best model for this metric
-                model_path = os.path.join(output_dir, f"{model_name}_best_{metric}.pkl")
+                model_path = os.path.join(output_dir, f"{model_name}_best_{metric}-{score}.pkl")
                 save_model(best_models[metric], model_path)
                 log_message = f"Updated best model saved to {model_path}"
                 print(log_message)
@@ -127,3 +169,6 @@ final_message = f"Performance metrics saved to {pdf_path}"
 print(final_message)
 with open(log_file_path, "a") as log_file:
     log_file.write(final_message + "\n")
+
+# Summarize findings
+summarize_findings(best_models, best_scores, X, y, log_file_path)
