@@ -30,8 +30,8 @@ X_test = scaler.transform(X_test)
 
 # Stage 1 - Classification Model to predict if a claim exists
 # classifier = RandomForestClassifier(class_weight="balanced_subsample", random_state=42)
-# classifier = LogisticRegression(C=0.01, penalty="l1", class_weight="balanced", solver="liblinear", random_state=42)
-classifier = KNeighborsClassifier(metric='euclidean', n_neighbors=1)
+classifier = LogisticRegression(C=0.1, penalty="l2", class_weight="balanced", solver="saga", random_state=42)
+# classifier = KNeighborsClassifier(metric='euclidean', n_neighbors=1)
 classifier.fit(X_train, y_class_train)
 
 # Predict the existence of a claim
