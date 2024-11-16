@@ -6,7 +6,7 @@ from sklearn.metrics import f1_score, classification_report
 from imblearn.over_sampling import SMOTE
 
 # Load the dataset (replace 'your_file.csv' with the actual file path)
-data = pd.read_csv("original_data/trainingset.csv")
+data = pd.read_csv("../original_data/trainingset.csv")
 
 # Convert output to binary: 0 stays 0, non-zero values become 1
 data["ClaimAmount"] = data["ClaimAmount"].apply(lambda x: 0 if x == 0 else 1)
