@@ -1,20 +1,90 @@
 import random
 import pandas as pd
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+
 
 
 class Dataset:
-    def __init__(self, DSpath):
+    def __init__(self, DSpath, label):
         self.data = pd.read_csv(DSpath)
         self.data = self.data.drop(self.data.columns[0], axis=1)
+        self.non_zero_data = None
         self.subsets = {}
         self.train_data = None
         self.test_data = None
-        self.ratio = None
+        self.label = label
+        self.ratio = Dataset.define_ds_ratio(self.data, self.label)
         self.train_features = None
         self.test_features = None
-        self.train_labels = None
-        self.test_labels = None
+        self.train_label = None
+        self.test_label = None
+        self.bin_train_label = None
+        self.bin_test_label = None
+        self.nz_train_features = None
+        self.nz_train_label = None
+        self.sub_train_features = None
+        self.sub_train_label = None
+        self.sub_test_features = None
+        self.sub_test_label = None
+
+    def summary(self):
+        """
+        Prints a summary of the dataset, including class distribution and feature information.
+        """
+        print(f"Dataset Shape: {self.data.shape}")
+        print(f"Label Distribution:\n{self.data[self.label].value_counts(normalize=True)}")
+
+    def save_subset(self, subset_key, file_path):
+        if subset_key in self.subsets:
+            self.subsets[subset_key].to_csv(file_path, index=False)
+        else:
+            print(f"Subset with key {subset_key} does not exist.")
+
+    def load_subset(self, file_path):
+        return pd.read_csv(file_path)
+
+    @staticmethod
+    def define_ds_ratio(ds, label):
+        class_1_df = ds[ds[label] > 0]
+        class_0_df = ds[ds[label] == 0]
+
+
+        return len(class_1_df)/ (len(class_0_df) + len(class_1_df))
+
+    def improve_train_ratio(self, target_ratio):
+        # Separate the positive and negative classes
+        class_1_df = self.train_data[self.train_data[self.label] > 0]
+        class_0_df = self.train_data[self.train_data[self.label] == 0]
+
+        print(f"Ratio = {self.ratio}")
+
+        # Calculate the required number of negative samples to achieve the target ratio
+        target_num_class_0 = int(len(class_1_df) * (1 - target_ratio) / target_ratio)
+
+        # Check if we need to reduce the negatives
+        if len(class_0_df) > target_num_class_0:
+            # Downsample the negative class to the target number
+            class_0_df = class_0_df.sample(n=target_num_class_0, random_state=42)
+
+        # Concatenate the class dataframes back together and shuffle
+        self.train_data = pd.concat([class_0_df, class_1_df]).sample(frac=1, random_state=42).reset_index(drop=True)
+
+        # Recalculate and print the new ratio
+        new_ratio = len(class_1_df) / len(self.train_data)
+        print(f"New ratio: {new_ratio:.2f}")
+
+    def create_non_zero_data(self, column):
+        self.non_zero_data = self.data[self.data[column] != 0]
+
+    def scale_features(self, scaler=StandardScaler()):
+        """
+        Scales features using the provided scaler or StandardScaler by default.
+        :param scaler: An instance of a scaler (e.g., StandardScaler or MinMaxScaler).
+        """
+        scaler = scaler
+        self.data[self.data.columns] = scaler.fit_transform(self.data[self.data.columns])
 
 
     def create_subsets(self, ratios, seed=None):
@@ -22,18 +92,18 @@ class Dataset:
         Populates the subset attribute with subsets of the data for each given ratio.
         :param ratios: a list of ratios of fraud data over total data
         '''
-        class_1_df = self.train_data[self.train_data['Class'] == 1]
-        class_0_df = self.train_data[self.train_data['Class'] == 0]
+        class_1_df = self.train_data[self.train_data[self.label] == 1]
+        class_0_df = self.train_data[self.train_data[self.label] == 0]
 
         # Generate subsets for each ratio
         for ratio in ratios:
-            if self.fraud_rate > ratio:  # Too much fraud, reduce fraud cases
+            if self.ratio > ratio:  # Too much fraud, reduce fraud cases
                 target_class_0_count = len(class_0_df)  # Use all non-fraud cases
                 target_class_1_count = int(round((ratio * target_class_0_count)/(1 - ratio)))
                 target_class_1_df = class_1_df.sample(n=target_class_1_count, random_state=seed)
                 subset_df = pd.concat([target_class_1_df, class_0_df])
 
-            elif self.fraud_rate < ratio:  # Too little fraud, reduce non-fraud cases
+            elif self.ratio < ratio:  # Too little fraud, reduce non-fraud cases
                 target_class_1_count = len(class_1_df)  # Use all fraud cases
                 target_class_0_count = int(round(target_class_1_count * (1 - ratio) / ratio))
                 target_class_0_df = class_0_df.sample(n=target_class_0_count, random_state=seed)
@@ -77,41 +147,117 @@ class Dataset:
         else:
             self.train_data = self.data
 
-    @staticmethod
-    def split_feature_label(dataframe, label="Class"):
-        '''
-
-        :param dataframe: The dataframe to split between features and label
-        :param label: the name of the label column in the dataframe
-        :return: a dataframe of features and another of the frame.
-        '''
-        label_df = dataframe.loc[:, label]
-        features = dataframe.drop(label, axis=1, inplace=False)
-        return features, label_df
-
-    def define_label_features(self, label, features=None):
+    def define_label_features(self, features=None):
         '''
         Divides the data into features and labels for the whole training set.
         :param label: name of the label column
         :param features: names of the features column
         '''
-        if self.train_data is not None:
-            self.train_label = self.train_data.loc[:,label]
 
-            if features: # if we want to test specific features
-                self.train_features = self.train_data.loc[:,features]
-            else: # otherwise all features included
-                self.train_features = self.train_data.drop(label, axis=1, inplace=False)
+        if self.train_data is not None:
+            self.train_label = self.train_data[self.label]
+            self.bin_train_label = self.train_label.apply(lambda x: 1 if x > 0 else 0)
+
+            if features:
+                self.train_features = self.train_data[features]
+            else:
+                self.train_features = self.train_data.drop(columns=[self.label])
 
         if self.test_data is not None:
-            self.test_label = self.test_data.loc[:, label]
+            self.test_label = self.test_data[self.label]
+            self.bin_test_label = self.test_label.apply(lambda x: 1 if x > 0 else 0)
             if features:
-                self.test_features = self.test_data.loc[:, features]
+                self.test_features = self.test_data[features]
             else:
-                self.test_features = self.test_data.drop(label, axis=1, inplace=False)
+                self.test_features = self.test_data.drop(columns=[self.label])
 
-    def define_test_only_no_label(self):
-        self.test_features = self.data
+    def get_train_test(self):
+        """
+        Returns the train/test split as (X_train, X_test, y_train, y_test).
+        """
+        return self.train_features, self.test_features, self.train_label, self.test_label
+
+    def generate_non_zero_data(self):
+        """
+        Creates nz_train_features and nz_train_label by filtering out rows
+        where the train_label is zero.
+        """
+        if self.train_features is None or self.train_label is None:
+            raise ValueError("Training features and labels must be defined before filtering non-zero data.")
+
+        # Filter non-zero rows
+        non_zero_mask = self.train_label != 0
+        self.nz_train_features = self.train_features[non_zero_mask]
+        self.nz_train_label = self.train_label[non_zero_mask]
+
+    @staticmethod
+    def select_features(features, labels, num_features=None, threshold=None, binary=True, random_state=None):
+        """
+        Performs feature selection using Random Forest.
+
+        Parameters:
+            features (pd.DataFrame): Feature matrix.
+            labels (pd.Series): Target labels (binary or continuous).
+            num_features (int): Number of top features to select. If None, use threshold.
+            threshold (float): Minimum importance score to retain a feature. Ignored if num_features is provided.
+            binary (bool): Whether to use binary or continuous label for feature selection.
+            random_state (int): Random state for reproducibility.
+
+        Returns:
+            List of selected feature names.
+        """
+        if binary:
+            rf = RandomForestClassifier(random_state=random_state)
+        else:
+            rf = RandomForestRegressor(random_state=random_state)
+
+        rf.fit(features, labels)
+
+        # Get feature importances
+        feature_importances = rf.feature_importances_
+        feature_names = features.columns
+
+        # Create a DataFrame to store feature names and importances
+        importance_df = pd.DataFrame({
+            'Feature': feature_names,
+            'Importance': feature_importances
+        }).sort_values(by='Importance', ascending=False)
+
+        # Select top features based on the method
+        if num_features:
+            selected_features = importance_df.head(num_features)['Feature']
+        elif threshold:
+            selected_features = importance_df[importance_df['Importance'] >= threshold]['Feature']
+        else:
+            raise ValueError("Specify either num_features or threshold for feature selection.")
+
+        print(f"Selected Features:\n{selected_features.tolist()}")
+        return selected_features.tolist()
+
+    def create_feature_subset(self, feature_list):
+        """
+        Creates a subset of training data with only the specified features.
+        Stores the result in new attributes: sub_train_features and sub_train_label.
+        :param feature_list: List of feature names to include in the subset.
+        """
+        if self.train_features is None or self.train_label is None:
+            raise ValueError("Training features and labels must be defined before creating a subset.")
+
+        missing_features_train = [feature for feature in feature_list if feature not in self.train_features.columns]
+        missing_features_test = [feature for feature in feature_list if feature not in self.test_features.columns]
+        missing_features = set(missing_features_train + missing_features_test)
+        if missing_features:
+            raise ValueError(f"The following features are not present in the dataset: {missing_features}")
+
+        # Create the subsets
+        self.sub_train_features = self.train_features[feature_list].copy()
+        self.sub_train_label = self.train_label.copy()
+        self.sub_test_features = self.test_features[feature_list].copy()
+        self.sub_test_label = self.test_label.copy()
+
+        print(f"Created feature subsets:")
+        print(f" - Training subset: {len(feature_list)} features, {self.sub_train_features.shape[0]} samples.")
+        print(f" - Testing subset: {len(feature_list)} features, {self.sub_test_features.shape[0]} samples.")
 
 
 #### for our case study we have used below for cross-validation
@@ -145,7 +291,7 @@ def find_best_model(model, param_grid, cv, scoring, training_features, training_
     """
 
 
-    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv, scoring=scoring)
+    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv, scoring=scoring, n_jobs=-1, verbose=2)
     grid_search.fit(training_features, training_labels)
 
     best_model = grid_search.best_estimator_
