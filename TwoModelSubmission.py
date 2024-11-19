@@ -472,7 +472,7 @@ for config_index, config in enumerate(configurations, start=1):
     test_data = test_data.sort_values("rowIndex")
 
     # Save results to a CSV file
-    output_filename = f"1_3_{config_index}.csv"
+    output_filename = f"2_3_{config_index}.csv"
     output_filepath = os.path.join(output_dir, output_filename)
     test_data[["rowIndex", "ClaimAmount"]].to_csv(output_filepath, index=False)
 
