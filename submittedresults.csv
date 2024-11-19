@@ -1,0 +1,43 @@
+Model,Parameters,Preprocessing,MAE Score,F1 Score,,Not Submitted
+Random Forest Regressor,"{n_estimators: 50, criterion: ""squared error"", max_features: ""sqrt""}",,146.2098,0.1736,,Submitted
+"KNN Classifier +
+Random Forest Regressor","{n_neighbors: 20, weights: distance}
+{bootstrap: False, n_estimators: 500, max_depth: 40, max_features: sqrt}","{pos_ratio: 0.2, subset_selection: 13, scaling: True}
+{subset_selection: 15, scaling: False}",,,,Submitted + Scored
+"KNN Classifier +
+Random Forest Regressor","{n_neighbors: 15, weights: distance}
+{bootstrap: False, n_estimators: 500, max_depth: 40, max_features: sqrt}","{pos_ratio: 0.15, subset_selection: 13, scaling: True}
+{subset_selection: 15, scaling: False}",,,,
+"KNN Classifier +
+Random Forest Regressor","{n_neighbors: 1, weights: uniform}
+{bootstrap: False, n_estimators: 500, max_depth: 40, max_features: sqrt}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: False}",,,,
+"KNN Classifier +
+KNN Regressor","{n_neighbors: 1, weights: uniform}
+{n_neighbors: 800, algorithm: auto, p: 1, weights: distance}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: True}",,,,
+"KNN Classifier +
+SVM Regressor","{n_neighbors: 1, weights: uniform}
+{c: 1000, kernel: rbf, gamma: scale}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: True}",,,,
+"KNN Classifier +
+Gradient Boosting Regressor","{n_neighbors: 1, weights: uniform}
+{n_estimators: 200, max_depth: None, max_features: log2, learning_rate: 0.01}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: False}",,,,
+"Random Forest Classifier +
+Random Forest Regressor","{class_weight: balanced, n_estimators: 200, max_depth: None, max_features: sqrt, criterion: entropy}
+{bootstrap: False, n_estimators: 500, max_depth: 40, max_features: sqrt}","{pos_ratio: 0.1, subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: False}",,,,
+"Random Forest Classifier +
+KNN Regressor","{class_weight: balanced, n_estimators: 200, max_depth: None, max_features: sqrt}
+{n_neighbors: 800, algorithm: auto, p: 1, weights: distance}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: True}",,,,
+"Random Forest Classifier +
+SVM Regressor","{class_weight: balanced, n_estimators: 200, max_depth: None, max_features: sqrt}
+{c: 1000, kernel: rbf, gamma: scale}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: True}",,,,
+"Random Forest Classifier +
+Gradient Boosting Regressor","{class_weight: balanced, n_estimators: 200, max_depth: None, max_features: sqrt}
+{n_estimators: 200, max_depth: None, max_features: log2, learning_rate: 0.01}","{subset_selection: 13, scaling: False}
+{subset_selection: 15, scaling: False}",,,,
+

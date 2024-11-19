@@ -1,0 +1,305 @@
+{
+  "models": [
+
+    {
+      "name": "KNN Classifier + Random Forest Regressor",
+      "parameters": {
+        "classifier": {
+          "n_neighbors": 20,
+          "weights": "distance"
+        },
+        "regressor": {
+          "bootstrap": false,
+          "n_estimators": 500,
+          "max_depth": 40,
+          "max_features": "sqrt"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "pos_ratio": 0.2,
+          "subset_selection": 13,
+          "scaling": true
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": false
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": true
+    },
+
+    {
+      "name": "KNN Classifier + Random Forest Regressor",
+      "parameters": {
+        "classifier": {
+          "n_neighbors": 15,
+          "weights": "distance"
+        },
+        "regressor": {
+          "bootstrap": false,
+          "n_estimators": 500,
+          "max_depth": 40,
+          "max_features": "sqrt"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "pos_ratio": 0.15,
+          "subset_selection": 13,
+          "scaling": true
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": false
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "KNN Classifier + Random Forest Regressor",
+      "parameters": {
+        "classifier": {
+          "n_neighbors": 1,
+          "weights": "uniform"
+        },
+        "regressor": {
+          "bootstrap": false,
+          "n_estimators": 500,
+          "max_depth": 40,
+          "max_features": "sqrt"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": false
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "KNN Classifier + KNN Regressor",
+      "parameters": {
+        "classifier": {
+          "n_neighbors": 1,
+          "weights": "uniform"
+        },
+        "regressor": {
+          "n_neighbors": 800,
+          "algorithm": "auto",
+          "p": 1,
+          "weights": "distance"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": true
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "KNN Classifier + SVM Regressor",
+      "parameters": {
+        "classifier": {
+          "n_neighbors": 1,
+          "weights": "uniform"
+        },
+        "regressor": {
+          "c": 1000,
+          "kernel": "rbf",
+          "gamma": "scale"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": true
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "KNN Classifier + Gradient Boosting Regressor",
+      "parameters": {
+        "classifier": {
+          "n_neighbors": 1,
+          "weights": "uniform"
+        },
+        "regressor": {
+          "n_estimators": 200,
+          "max_depth": null,
+          "max_features": "log2",
+          "learning_rate": 0.01
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": false
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "Random Forest Classifier + Random Forest Regressor",
+      "parameters": {
+        "classifier": {
+          "class_weight": "balanced",
+          "n_estimators": 200,
+          "max_depth": null,
+          "max_features": "sqrt",
+          "criterion": "entropy"
+        },
+        "regressor": {
+          "bootstrap": false,
+          "n_estimators": 500,
+          "max_depth": 40,
+          "max_features": "sqrt"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "pos_ratio": 0.1,
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": false
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "Random Forest Classifier + KNN Regressor",
+      "parameters": {
+        "classifier": {
+          "class_weight": "balanced",
+          "n_estimators": 200,
+          "max_depth": null,
+          "max_features": "sqrt"
+        },
+        "regressor": {
+          "n_neighbors": 800,
+          "algorithm": "auto",
+          "p": 1,
+          "weights": "distance"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": true
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "Random Forest Classifier + SVM Regressor",
+      "parameters": {
+        "classifier": {
+          "class_weight": "balanced",
+          "n_estimators": 200,
+          "max_depth": null,
+          "max_features": "sqrt"
+        },
+        "regressor": {
+          "c": 1000,
+          "kernel": "rbf",
+          "gamma": "scale"
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": true
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    },
+
+    {
+      "name": "Random Forest Classifier + Gradient Boosting Regressor",
+      "parameters": {
+        "classifier": {
+          "class_weight": "balanced",
+          "n_estimators": 200,
+          "max_depth": null,
+          "max_features": "sqrt"
+        },
+        "regressor": {
+          "n_estimators": 200,
+          "max_depth": null,
+          "max_features": "log2",
+          "learning_rate": 0.01
+        }
+      },
+      "preprocessing": {
+        "classifier": {
+          "subset_selection": 13,
+          "scaling": false
+        },
+        "regressor": {
+          "subset_selection": 15,
+          "scaling": false
+        }
+      },
+      "mae_score": null,
+      "f1_score": null,
+      "submitted": false
+    }
+
+  ]
+}

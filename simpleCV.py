@@ -49,12 +49,12 @@ y_train = ds.bin_train_label #use ds.bin_train label for binary y, or ds.train_l
 scoring = "f1"
 
 models_with_params = [
-    (LogisticRegression(max_iter=10000), {
-        'C': [0.01, 0.1, 1, 10, 100],
-        'solver': ['liblinear', 'saga'],
-        'penalty': ['l1', 'l2'],
-        'class_weight': ['balanced', None],
-    }),
+    # (LogisticRegression(max_iter=10000), {
+    #     'C': [i/100 for i in range(10,25,5)],
+    #     'solver': ['liblinear', 'saga'],
+    #     'penalty': ['l1', 'l2'],
+    #     'class_weight': ['balanced', None],
+    # }),
     # (LogisticRegression(max_iter=10000), {
     #     'C': [0.01, 0.1, 1, 10, 100],
     #     'solver': ['sag', 'lbfgs', 'newton-cg', 'saga'],
