@@ -6,6 +6,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, f1_score
+from sklearn.model_selection import train_test_split
 
 
 # File paths (adjust if necessary)
@@ -72,34 +74,6 @@ configurations = [
             "preprocessing": [SelectKBest(f_classif, k=15)],
         },
     },
-    {
-        "classifier": {
-            "model": KNeighborsClassifier(n_neighbors=20, weights="distance"),
-            "preprocessing": [
-                BalanceClasses(pos_ratio=0.2),
-                SelectKBest(f_classif, k=13),
-                StandardScaler(),
-            ],
-        },
-        "regressor": {
-            "model": RandomForestRegressor(n_estimators=500, max_depth=40, max_features="sqrt"),
-            "preprocessing": [SelectKBest(f_classif, k=15)],
-        },
-    },
-    {
-        "classifier": {
-            "model": KNeighborsClassifier(n_neighbors=20, weights="distance"),
-            "preprocessing": [
-                BalanceClasses(pos_ratio=0.2),
-                SelectKBest(f_classif, k=13),
-                StandardScaler(),
-            ],
-        },
-        "regressor": {
-            "model": RandomForestRegressor(n_estimators=500, max_depth=40, max_features="sqrt"),
-            "preprocessing": [SelectKBest(f_classif, k=15)],
-        },
-    },
     # Add additional configurations here if necessary
 ]
 
@@ -116,6 +90,59 @@ def serialize_configuration(config):
         },
     }
 
+# Train and evaluate on a train/test split
+def evaluate_config_on_trainset(train_data, classifier_config, regressor_config):
+    print("Evaluating configuration on train/test split...")
+    
+    # Split the training set into train and test subsets
+    X = train_data.drop(columns=["ClaimAmount", "rowIndex"])
+    y_classifier = (train_data["ClaimAmount"] > 0).astype(int)  # Binary target for classifier
+    y_regressor = train_data["ClaimAmount"]  # Continuous target for regressor
+
+    # Split for classifier evaluation
+    X_train_cls, X_test_cls, y_train_cls, y_test_cls = train_test_split(X, y_classifier, test_size=0.2, random_state=42)
+
+    # Split for regressor evaluation
+    X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(
+        train_data[train_data["ClaimAmount"] > 0].drop(columns=["ClaimAmount", "rowIndex"]),
+        train_data[train_data["ClaimAmount"] > 0]["ClaimAmount"],
+        test_size=0.2,
+        random_state=42,
+    )
+
+    # Train classifier
+    classifier_pipeline_steps = []
+    for step in classifier_config["preprocessing"]:
+        if isinstance(step, BalanceClasses):
+            print("Applying class balancing during evaluation...")
+            step = step.fit(X_train_cls, y_train_cls)
+            X_train_cls, y_train_cls = step.transform(X_train_cls, y_train_cls)
+        else:
+            classifier_pipeline_steps.append((f"step_{len(classifier_pipeline_steps)}", step))
+    classifier_pipeline_steps.append(("classifier", classifier_config["model"]))
+    classifier_pipeline = Pipeline(classifier_pipeline_steps)
+    classifier_pipeline.fit(X_train_cls, y_train_cls)
+
+    # Evaluate classifier
+    y_pred_cls = classifier_pipeline.predict(X_test_cls)
+    f1 = f1_score(y_test_cls, y_pred_cls)
+    print(f"Classifier F1 score: {f1}")
+
+    # Train regressor
+    regressor_pipeline_steps = [
+        *[(f"step_{i}", step) for i, step in enumerate(regressor_config["preprocessing"])],
+        ("regressor", regressor_config["model"]),
+    ]
+    regressor_pipeline = Pipeline(regressor_pipeline_steps)
+    regressor_pipeline.fit(X_train_reg, y_train_reg)
+
+    # Evaluate regressor
+    y_pred_reg = regressor_pipeline.predict(X_test_reg)
+    mae = mean_absolute_error(y_test_reg, y_pred_reg)
+    print(f"Regressor MAE: {mae}")
+
+    return f1, mae
+
 # Train Classifier
 def train_classifier(train_data, classifier_config):
     print("Training classifier...")
@@ -128,7 +155,6 @@ def train_classifier(train_data, classifier_config):
     for step in classifier_config["preprocessing"]:
         if isinstance(step, BalanceClasses):
             print("Applying class balancing step...")
-            # Apply balancing as part of preprocessing
             step = step.fit(X, y)
             X, y = step.transform(X, y)
         else:
@@ -171,6 +197,9 @@ for config_index, config in enumerate(configurations, start=1):
     print("Loading training data...")
     train_data = pd.read_csv(train_file)
 
+    # Evaluate on train/test split
+    f1, mae = evaluate_config_on_trainset(train_data, config["classifier"], config["regressor"])
+
     # Train classifier
     print("Starting classifier training...")
     classifier = train_classifier(train_data, config["classifier"])
@@ -208,8 +237,12 @@ for config_index, config in enumerate(configurations, start=1):
     output_filepath = os.path.join(output_dir, output_filename)
     test_data[["rowIndex", "ClaimAmount"]].to_csv(output_filepath, index=False)
 
-    # Add serialized configuration to the map.json
-    map_json[output_filename] = serialize_configuration(config)
+    # Add serialized configuration and metrics to the map.json
+    map_json[output_filename] = {
+        **serialize_configuration(config),
+        "F1_score": f1,
+        "MAE": mae,
+    }
 
     print(f"Results for configuration {config_index} saved to {output_filepath}.")
 
