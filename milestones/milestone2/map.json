@@ -1,0 +1,170 @@
+{
+    "2_3_1.csv": {
+        "classifier": {
+            "model": "KNeighborsClassifier(n_neighbors=20, weights='distance')",
+            "preprocessing": [
+                "BalanceClasses(pos_ratio=0.2)",
+                "SelectKBest(k=13)",
+                "StandardScaler()"
+            ]
+        },
+        "regressor": {
+            "model": "RandomForestRegressor(bootstrap=False, max_depth=40, max_features='sqrt', n_estimators=500)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.4164305949008499,
+        "MAE": 1343.160418260788
+    },
+    "2_3_2.csv": {
+        "classifier": {
+            "model": "KNeighborsClassifier(n_neighbors=15, weights='distance')",
+            "preprocessing": [
+                "BalanceClasses(pos_ratio=0.15)",
+                "SelectKBest(k=13)",
+                "StandardScaler()"
+            ]
+        },
+        "regressor": {
+            "model": "RandomForestRegressor(bootstrap=False, max_depth=40, max_features='sqrt', n_estimators=500)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.410958904109589,
+        "MAE": 1348.614186828712
+    },
+    "2_3_3.csv": {
+        "classifier": {
+            "model": "KNeighborsClassifier(n_neighbors=1)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "RandomForestRegressor(bootstrap=False, max_depth=40, max_features='sqrt', n_estimators=500)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.3606060606060606,
+        "MAE": 1336.5125910319762
+    },
+    "2_3_4.csv": {
+        "classifier": {
+            "model": "KNeighborsClassifier(n_neighbors=1)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "KNeighborsRegressor(n_neighbors=800, p=1, weights='distance')",
+            "preprocessing": [
+                "SelectKBest(k=15)",
+                "StandardScaler()"
+            ]
+        },
+        "F1_score": 0.3606060606060606,
+        "MAE": 1261.7189501464793
+    },
+    "2_3_5.csv": {
+        "classifier": {
+            "model": "KNeighborsClassifier(n_neighbors=1)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "SVR(C=1000)",
+            "preprocessing": [
+                "SelectKBest(k=15)",
+                "StandardScaler()"
+            ]
+        },
+        "F1_score": 0.3606060606060606,
+        "MAE": 1601.6040569802256
+    },
+    "2_3_6.csv": {
+        "classifier": {
+            "model": "KNeighborsClassifier(n_neighbors=1)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "GradientBoostingRegressor(learning_rate=0.01, max_depth=None, max_features='log2', n_estimators=200)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.3606060606060606,
+        "MAE": 1384.5272798481506
+    },
+    "2_3_7.csv": {
+        "classifier": {
+            "model": "RandomForestClassifier(class_weight='balanced', criterion='entropy', n_estimators=200)",
+            "preprocessing": [
+                "BalanceClasses(pos_ratio=0.1)",
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "RandomForestRegressor(bootstrap=False, max_depth=40, max_features='sqrt', n_estimators=500)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.4857142857142857,
+        "MAE": 1357.2285281029908
+    },
+    "2_3_8.csv": {
+        "classifier": {
+            "model": "RandomForestClassifier(class_weight='balanced', n_estimators=200)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "KNeighborsRegressor(n_neighbors=800, p=1, weights='distance')",
+            "preprocessing": [
+                "SelectKBest(k=15)",
+                "StandardScaler()"
+            ]
+        },
+        "F1_score": 0.4914207275223061,
+        "MAE": 1261.7189501464793
+    },
+    "2_3_9.csv": {
+        "classifier": {
+            "model": "RandomForestClassifier(class_weight='balanced', n_estimators=200)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "SVR(C=1000)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.4924346629986245,
+        "MAE": 1643.5145487961013
+    },
+    "2_3_10.csv": {
+        "classifier": {
+            "model": "RandomForestClassifier(class_weight='balanced', n_estimators=200)",
+            "preprocessing": [
+                "SelectKBest(k=13)"
+            ]
+        },
+        "regressor": {
+            "model": "GradientBoostingRegressor(learning_rate=0.01, max_depth=None, max_features='log2', n_estimators=200)",
+            "preprocessing": [
+                "SelectKBest(k=15)"
+            ]
+        },
+        "F1_score": 0.49105914718019256,
+        "MAE": 1386.2246672185752
+    }
+}
