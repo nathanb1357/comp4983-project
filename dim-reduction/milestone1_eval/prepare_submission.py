@@ -54,8 +54,8 @@ for model_file in os.listdir(models_dir):
         # Load the model
         model = joblib.load(model_path)
 
-        # Train the model 3 times
-        for run in range(3):  # Limit to 3 runs
+        # Train the model 5 times
+        for run in range(5):  # Limit to 3 runs
             print(f"Run {run + 1} for {model_name}...")
 
             # Randomize training data order
@@ -95,5 +95,6 @@ for model_file in os.listdir(models_dir):
 from pprint import pprint
 pprint(model_param_map)
 with open(map_file_path, "w") as map_file:
-    json.dump(model_param_map, map_file, indent=4)
+    map_file.write(str(model_param_map))
+    # json.dump(model_param_map, map_file, indent=4)
     print(f"Saved parameter map to {map_file_path}")
