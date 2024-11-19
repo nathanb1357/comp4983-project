@@ -1,3 +1,4 @@
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from preprocessdata import preprocess_data
@@ -8,14 +9,17 @@ import numpy as np
 
 def train_classifier(data, model_config):
     """
-    Trains a classifier model based on the model configuration.
+    Trains a classifier model and evaluates it on training data.
 
     Parameters:
     - data (pd.DataFrame): The raw input dataset
     - model_config (dict): Configuration dictionary containing model parameters and preprocessing settings
 
     Returns:
-    - trained_classifier: The trained classifier model
+    - tuple: (trained_classifier, feature_columns, training_metrics)
+        - trained_classifier: The trained classifier model
+        - feature_columns: List of column names used for training
+        - training_metrics: Dictionary containing training set performance metrics
     """
     # Extract classifier parameters and preprocessing settings
     classifier_type = (
@@ -27,7 +31,7 @@ def train_classifier(data, model_config):
     preprocessing_params = model_config.get("preprocessing", {}).get("classifier", {})
 
     # Preprocess the data
-    processed_data = preprocess_data(data, preprocessing_params)
+    processed_data = preprocess_data(data, preprocessing_params, is_training=True)
 
     # Separate features and target
     X = processed_data.drop(["target", "ClaimAmount"], axis=1, errors="ignore")
@@ -57,7 +61,19 @@ def train_classifier(data, model_config):
     # Train the classifier
     classifier.fit(X, y)
 
-    return classifier, feature_columns
+    # Calculate training metrics
+    y_pred_train = classifier.predict(X)
+
+    training_metrics = {
+        "accuracy": accuracy_score(y, y_pred_train),
+        "error_rate": 1 - accuracy_score(y, y_pred_train),
+        "confusion_matrix": confusion_matrix(y, y_pred_train).tolist(),
+        "classification_report": classification_report(
+            y, y_pred_train, output_dict=True
+        ),
+    }
+
+    return classifier, feature_columns, training_metrics
 
 
 def predict_binary(classifier, feature_columns, test_data, model_config, model_name):
@@ -107,15 +123,36 @@ def main():
     test_df = pd.read_csv("./original_data/testset.csv")
 
     all_predictions = {}
+    all_metrics = {}
 
     for model in config["models"]:
         model_name = model.get("name", "unnamed_model")
-        print(f"=======Processing {model_name}=======")
+        print(f"\n=======Processing {model_name}=======")
 
-        # Train classifier and get feature columns
-        classifier, feature_columns = train_classifier(train_df, model_config=model)
+        # Train classifier and get feature columns and metrics
+        classifier, feature_columns, training_metrics = train_classifier(
+            train_df, model_config=model
+        )
 
-        # Make binary predictions
+        # Store metrics
+        all_metrics[model_name] = training_metrics
+
+        # Print training metrics
+        print("\nTraining Set Metrics:")
+        print(f"Accuracy: {training_metrics['accuracy']:.4f}")
+        print(f"Error Rate: {training_metrics['error_rate']:.4f}")
+        print("\nConfusion Matrix:")
+        print(np.array(training_metrics["confusion_matrix"]))
+        print("\nClassification Report:")
+        for label, metrics in training_metrics["classification_report"].items():
+            if isinstance(metrics, dict):
+                print(f"\n{label}:")
+                print(f"Precision: {metrics['precision']:.4f}")
+                print(f"Recall: {metrics['recall']:.4f}")
+                print(f"F1-score: {metrics['f1-score']:.4f}")
+                print(f"Support: {metrics['support']}")
+
+        # Make binary predictions on test set
         predictions = predict_binary(
             classifier,
             feature_columns,
@@ -126,13 +163,18 @@ def main():
 
         all_predictions[model_name] = predictions
 
-        print(f"Predictions saved for {model_name}")
+        print(f"\nTest Set Predictions:")
         print(f"Number of predictions: {len(predictions)}")
         print(f"Positive predictions: {sum(predictions)}")
         print(f"Negative predictions: {len(predictions) - sum(predictions)}")
         print("-------------------")
 
-    print("All predictions completed and saved!")
+    # Optionally, save metrics to a JSON file
+    with open("training_metrics.json", "w") as f:
+        json.dump(all_metrics, f, indent=4)
+
+    print("\nAll predictions completed and saved!")
+    print("Training metrics have been saved to 'training_metrics.json'")
 
 
 if __name__ == "__main__":

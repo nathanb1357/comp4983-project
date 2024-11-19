@@ -1,0 +1,330 @@
+{
+    "KNN Classifier + Random Forest Regressor": {
+        "accuracy": 0.9693714285714286,
+        "error_rate": 0.03062857142857145,
+        "confusion_matrix": [
+            [
+                65626,
+                1039
+            ],
+            [
+                1105,
+                2230
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9834409794548261,
+                "recall": 0.9844146103652591,
+                "f1-score": 0.9839275540495966,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.6821657999388192,
+                "recall": 0.6686656671664168,
+                "f1-score": 0.6753482737734706,
+                "support": 3335.0
+            },
+            "accuracy": 0.9693714285714286,
+            "macro avg": {
+                "precision": 0.8328033896968227,
+                "recall": 0.826540138765838,
+                "f1-score": 0.8296379139115336,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9690873691164562,
+                "recall": 0.9693714285714286,
+                "f1-score": 0.9692259554821555,
+                "support": 70000.0
+            }
+        }
+    },
+    "KNN Classifier + KNN Regressor": {
+        "accuracy": 0.9693714285714286,
+        "error_rate": 0.03062857142857145,
+        "confusion_matrix": [
+            [
+                65626,
+                1039
+            ],
+            [
+                1105,
+                2230
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9834409794548261,
+                "recall": 0.9844146103652591,
+                "f1-score": 0.9839275540495966,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.6821657999388192,
+                "recall": 0.6686656671664168,
+                "f1-score": 0.6753482737734706,
+                "support": 3335.0
+            },
+            "accuracy": 0.9693714285714286,
+            "macro avg": {
+                "precision": 0.8328033896968227,
+                "recall": 0.826540138765838,
+                "f1-score": 0.8296379139115336,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9690873691164562,
+                "recall": 0.9693714285714286,
+                "f1-score": 0.9692259554821555,
+                "support": 70000.0
+            }
+        }
+    },
+    "KNN Classifier + SVM Regressor": {
+        "accuracy": 0.9693714285714286,
+        "error_rate": 0.03062857142857145,
+        "confusion_matrix": [
+            [
+                65626,
+                1039
+            ],
+            [
+                1105,
+                2230
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9834409794548261,
+                "recall": 0.9844146103652591,
+                "f1-score": 0.9839275540495966,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.6821657999388192,
+                "recall": 0.6686656671664168,
+                "f1-score": 0.6753482737734706,
+                "support": 3335.0
+            },
+            "accuracy": 0.9693714285714286,
+            "macro avg": {
+                "precision": 0.8328033896968227,
+                "recall": 0.826540138765838,
+                "f1-score": 0.8296379139115336,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9690873691164562,
+                "recall": 0.9693714285714286,
+                "f1-score": 0.9692259554821555,
+                "support": 70000.0
+            }
+        }
+    },
+    "KNN Classifier + Gradient Boosting Regressor": {
+        "accuracy": 0.9693714285714286,
+        "error_rate": 0.03062857142857145,
+        "confusion_matrix": [
+            [
+                65626,
+                1039
+            ],
+            [
+                1105,
+                2230
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9834409794548261,
+                "recall": 0.9844146103652591,
+                "f1-score": 0.9839275540495966,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.6821657999388192,
+                "recall": 0.6686656671664168,
+                "f1-score": 0.6753482737734706,
+                "support": 3335.0
+            },
+            "accuracy": 0.9693714285714286,
+            "macro avg": {
+                "precision": 0.8328033896968227,
+                "recall": 0.826540138765838,
+                "f1-score": 0.8296379139115336,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9690873691164562,
+                "recall": 0.9693714285714286,
+                "f1-score": 0.9692259554821555,
+                "support": 70000.0
+            }
+        }
+    },
+    "Random Forest Classifier + Random Forest Regressor": {
+        "accuracy": 0.9696428571428571,
+        "error_rate": 0.03035714285714286,
+        "confusion_matrix": [
+            [
+                60887,
+                2113
+            ],
+            [
+                12,
+                6988
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9998029524294323,
+                "recall": 0.9664603174603175,
+                "f1-score": 0.9828489334054351,
+                "support": 63000.0
+            },
+            "1": {
+                "precision": 0.7678277112405231,
+                "recall": 0.9982857142857143,
+                "f1-score": 0.8680206198372772,
+                "support": 7000.0
+            },
+            "accuracy": 0.9696428571428571,
+            "macro avg": {
+                "precision": 0.8838153318349777,
+                "recall": 0.982373015873016,
+                "f1-score": 0.9254347766213562,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9766054283105413,
+                "recall": 0.9696428571428571,
+                "f1-score": 0.9713661020486194,
+                "support": 70000.0
+            }
+        }
+    },
+    "Random Forest Classifier + KNN Regressor": {
+        "accuracy": 0.9653571428571428,
+        "error_rate": 0.0346428571428572,
+        "confusion_matrix": [
+            [
+                64246,
+                2419
+            ],
+            [
+                6,
+                3329
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9999066176928345,
+                "recall": 0.9637140928523213,
+                "f1-score": 0.9814768135536256,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.5791579679888657,
+                "recall": 0.9982008995502248,
+                "f1-score": 0.7330177254211163,
+                "support": 3335.0
+            },
+            "accuracy": 0.9653571428571428,
+            "macro avg": {
+                "precision": 0.7895322928408501,
+                "recall": 0.980957496201273,
+                "f1-score": 0.857247269487371,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9798609498819382,
+                "recall": 0.9653571428571428,
+                "f1-score": 0.969639512711884,
+                "support": 70000.0
+            }
+        }
+    },
+    "Random Forest Classifier + SVM Regressor": {
+        "accuracy": 0.9653571428571428,
+        "error_rate": 0.0346428571428572,
+        "confusion_matrix": [
+            [
+                64246,
+                2419
+            ],
+            [
+                6,
+                3329
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9999066176928345,
+                "recall": 0.9637140928523213,
+                "f1-score": 0.9814768135536256,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.5791579679888657,
+                "recall": 0.9982008995502248,
+                "f1-score": 0.7330177254211163,
+                "support": 3335.0
+            },
+            "accuracy": 0.9653571428571428,
+            "macro avg": {
+                "precision": 0.7895322928408501,
+                "recall": 0.980957496201273,
+                "f1-score": 0.857247269487371,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9798609498819382,
+                "recall": 0.9653571428571428,
+                "f1-score": 0.969639512711884,
+                "support": 70000.0
+            }
+        }
+    },
+    "Random Forest Classifier + Gradient Boosting Regressor": {
+        "accuracy": 0.9653571428571428,
+        "error_rate": 0.0346428571428572,
+        "confusion_matrix": [
+            [
+                64246,
+                2419
+            ],
+            [
+                6,
+                3329
+            ]
+        ],
+        "classification_report": {
+            "0": {
+                "precision": 0.9999066176928345,
+                "recall": 0.9637140928523213,
+                "f1-score": 0.9814768135536256,
+                "support": 66665.0
+            },
+            "1": {
+                "precision": 0.5791579679888657,
+                "recall": 0.9982008995502248,
+                "f1-score": 0.7330177254211163,
+                "support": 3335.0
+            },
+            "accuracy": 0.9653571428571428,
+            "macro avg": {
+                "precision": 0.7895322928408501,
+                "recall": 0.980957496201273,
+                "f1-score": 0.857247269487371,
+                "support": 70000.0
+            },
+            "weighted avg": {
+                "precision": 0.9798609498819382,
+                "recall": 0.9653571428571428,
+                "f1-score": 0.969639512711884,
+                "support": 70000.0
+            }
+        }
+    }
+}
