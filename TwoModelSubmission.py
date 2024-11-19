@@ -5,9 +5,10 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, f1_score
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor
+from sklearn.svm import SVR  # For Support Vector Regressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, f1_score
 
 
 # File paths (adjust if necessary)
@@ -62,31 +63,269 @@ class BalanceClasses:
 configurations = [
     {
         "classifier": {
-            "model": KNeighborsClassifier(n_neighbors=20, weights="distance"),
+            "model": KNeighborsClassifier(
+                n_neighbors=20,
+                weights="distance"
+            ),
             "preprocessing": [
                 BalanceClasses(pos_ratio=0.2),
                 SelectKBest(f_classif, k=13),
-                StandardScaler(),
+                StandardScaler(),  # scaling=True
             ],
         },
         "regressor": {
-            "model": RandomForestRegressor(n_estimators=500, max_depth=40, max_features="sqrt"),
-            "preprocessing": [SelectKBest(f_classif, k=15)],
+            "model": RandomForestRegressor(
+                bootstrap=False,
+                n_estimators=500,
+                max_depth=40,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
         },
     },
-    # Add additional configurations here if necessary
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(
+                n_neighbors=15,
+                weights="distance"
+            ),
+            "preprocessing": [
+                BalanceClasses(pos_ratio=0.15),
+                SelectKBest(f_classif, k=13),
+                StandardScaler(),  # scaling=True
+            ],
+        },
+        "regressor": {
+            "model": RandomForestRegressor(
+                bootstrap=False,
+                n_estimators=500,
+                max_depth=40,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(
+                n_neighbors=1,
+                weights="uniform"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": RandomForestRegressor(
+                bootstrap=False,
+                n_estimators=500,
+                max_depth=40,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(
+                n_neighbors=1,
+                weights="uniform"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": KNeighborsRegressor(
+                n_neighbors=800,
+                algorithm="auto",
+                p=1,  # Manhattan distance
+                weights="distance"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                StandardScaler(),  # scaling=True
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(
+                n_neighbors=1,
+                weights="uniform"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": SVR(
+                C=1000,
+                kernel="rbf",
+                gamma="scale"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                StandardScaler(),  # scaling=True
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(
+                n_neighbors=1,
+                weights="uniform"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": GradientBoostingRegressor(
+                n_estimators=200,
+                max_depth=None,
+                max_features="log2",
+                learning_rate=0.01
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": RandomForestClassifier(
+                class_weight="balanced",
+                n_estimators=200,
+                max_depth=None,
+                max_features="sqrt",
+                criterion="entropy"
+            ),
+            "preprocessing": [
+                BalanceClasses(pos_ratio=0.1),
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": RandomForestRegressor(
+                bootstrap=False,
+                n_estimators=500,
+                max_depth=40,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": RandomForestClassifier(
+                class_weight="balanced",
+                n_estimators=200,
+                max_depth=None,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": KNeighborsRegressor(
+                n_neighbors=800,
+                algorithm="auto",
+                p=1,
+                weights="distance"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                StandardScaler(),  # scaling=True
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": RandomForestClassifier(
+                class_weight="balanced",
+                n_estimators=200,
+                max_depth=None,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": SVR(
+                C=1000,
+                kernel="rbf",
+                gamma="scale"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+    },
+    {
+        "classifier": {
+            "model": RandomForestClassifier(
+                class_weight="balanced",
+                n_estimators=200,
+                max_depth=None,
+                max_features="sqrt"
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": GradientBoostingRegressor(
+                n_estimators=200,
+                max_depth=None,
+                max_features="log2",
+                learning_rate=0.01
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=15),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+    },
 ]
 
 # Helper function to serialize configurations as string representations
 def serialize_configuration(config):
+    def clean_string(s):
+        return " ".join(s.replace("\n", " ").split())
+
     return {
         "classifier": {
-            "model": repr(config["classifier"]["model"]),
-            "preprocessing": [repr(step) for step in config["classifier"]["preprocessing"]],
+            "model": clean_string(repr(config["classifier"]["model"])),
+            "preprocessing": [clean_string(repr(step)) for step in config["classifier"]["preprocessing"]],
         },
         "regressor": {
-            "model": repr(config["regressor"]["model"]),
-            "preprocessing": [repr(step) for step in config["regressor"]["preprocessing"]],
+            "model": clean_string(repr(config["regressor"]["model"])),
+            "preprocessing": [clean_string(repr(step)) for step in config["regressor"]["preprocessing"]],
         },
     }
 
