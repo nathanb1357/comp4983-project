@@ -1,15 +1,16 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.metrics import f1_score, mean_squared_error, mean_absolute_error
-from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
+from sklearnex import patch_sklearn
+
+patch_sklearn()
 
 # Load dataset
 data = pd.read_csv("original_data/trainingset.csv")
@@ -39,33 +40,38 @@ models = {
     #         "model__class_weight": ["balanced"]
     #     }
     # }
-    "KNN": {
-        "model": KNeighborsClassifier(),
-        "params": {
-            "model__n_neighbors": [1],
-            "model__weights": ['uniform'],
-            "model__leaf_size": [10, 15, 20, 25, 30]
-        }
-    }
-    # "SVM": {
-    #     "model": SVC(),
+    # "KNN": {
+    #     "model": KNeighborsClassifier(),
     #     "params": {
-    #         "model__C": [0.1, 1, 10],
-    #         "model__kernel": ["linear", "rbf"],
+    #         "model__n_neighbors": [1],
+    #         "model__weights": ['uniform']
     #     }
     # }
+    # "SVM": {
+    #     "model": SVC(cache_size=3000),
+    #     "params": {
+    #         "model__C": [10, 100, 1000],
+    #         "model__kernel": ["rbf"],
+    #         "model__gamma": ["scale"],
+    #         "model__class_weight": ["balanced"]
+    #     }
+    # }
+    "Gradient Boosting Classifier": {
+        "model": GradientBoostingClassifier(),
+        "params": {
+            "model__n_estimators": [300, 400],
+            "model__learning_rate": [0.2, 0.3, 0.5],
+            "model__max_depth": [7, 10, 100, 500],
+            "model__max_features": [None]
+        }
+    }
 }
 
 # Dimensionality reduction techniques
-# dimensionality_reduction = {
-#     "None": None,
-#     "Select10Best": SelectKBest(f_classif, k=10),
-#     "Select15Best": SelectKBest(f_classif, k=15)
-# }
-
 dimensionality_reduction = {
-    "Select13Best": SelectKBest(f_classif, k=13),
-    "Select15Best": SelectKBest(f_classif, k=15),
+    # "None": None,
+    # "Select13Best": SelectKBest(f_classif, k=13),
+    "Select15Best": SelectKBest(f_classif, k=15)
 }
 
 
@@ -87,7 +93,7 @@ def test_pipeline(apply_scaling):
             steps.append(("model", model_info["model"]))
             pipeline = Pipeline(steps)
 
-            grid = GridSearchCV(pipeline, param_grid=model_info["params"], cv=5, scoring="f1", verbose=10)
+            grid = GridSearchCV(pipeline, param_grid=model_info["params"], cv=5, scoring="f1", verbose=10, n_jobs=-1)
             grid.fit(X_train, y_train)
 
             # Evaluate on test set
