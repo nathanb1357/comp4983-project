@@ -3,14 +3,17 @@ from multiprocessing import Manager
 from data_preprocessing import load_and_preprocess_data
 from evaluation import plot_and_save_metrics
 from utils import save_model
+from loss import insurance_score
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import ParameterGrid
 import os
 import copy
+import traceback
 import numpy as np
 from datetime import datetime
 from simulation_configs import simulation_configs
@@ -66,7 +69,8 @@ def evaluate_pipeline(X, y, pipeline, params, metrics):
         "MSE": mean_squared_error(y, y_pred),
         "RMSE": np.sqrt(mean_squared_error(y, y_pred)),
         "MAE": mean_absolute_error(y, y_pred),
-        "R2": r2_score(y, y_pred)
+        "R2": r2_score(y, y_pred),
+        "insurance_score": insurance_score(y, y_pred)
     }
     return {"params": params, "scores": scores, "pipeline": copy.deepcopy(pipeline)}
 
@@ -94,7 +98,8 @@ def summarize_findings(best_models, best_scores, X, y, log_file_path):
             "MSE": mean_squared_error(y, y_pred),
             "RMSE": np.sqrt(mean_squared_error(y, y_pred)),
             "MAE": mean_absolute_error(y, y_pred),
-            "R2": r2_score(y, y_pred)
+            "R2": r2_score(y, y_pred),
+            "insurance_score": insurance_score(y, y_pred)
         }
 
         summary += f"\nBest Model for {metric}:\n"
@@ -160,13 +165,13 @@ for model_name, model_info in config['models'].items():
 
                 # Save performance data for plotting
                 for metric, score in scores.items():
-                    performance_data[metric]["params"].append(params)
+                    performance_data[metric]["params"].append(copy.deepcopy(params))
                     performance_data[metric]["scores"].append(score)
 
                     # Synchronize access to shared resources
                     with lock:
                         if ((metric in ["MSE", "RMSE", "MAE"] and score < best_scores[metric]) or
-                            (metric == "R2" and score > best_scores[metric])):  # Minimize MSE/RMSE/MAE, maximize R2
+                            (metric in ["R2", "insurance_score"] and score > best_scores[metric])):  # Minimize MSE/RMSE/MAE, maximize R2
                             best_scores[metric] = score
                             best_models[metric] = copy.deepcopy(trained_pipeline)
 
@@ -180,6 +185,7 @@ for model_name, model_info in config['models'].items():
 
             except Exception as e:
                 print(f"Error during evaluation: {e}")
+                traceback.print_exc()  # Prints the traceback of the exception
 
 # Plot and save metrics
 pdf_path = os.path.join(output_dir, config['output_pdf'])
