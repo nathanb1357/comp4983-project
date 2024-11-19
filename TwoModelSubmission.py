@@ -329,45 +329,48 @@ def serialize_configuration(config):
         },
     }
 
-# Train and evaluate on a train/test split
+
 def evaluate_config_on_trainset(train_data, classifier_config, regressor_config):
-    print("Evaluating configuration on train/test split...")
-    
-    # Split the training set into train and test subsets
+    print("Evaluating combined classifier and regressor model...")
+    # Split the dataset into features and targets
     X = train_data.drop(columns=["ClaimAmount", "rowIndex"])
-    y_classifier = (train_data["ClaimAmount"] > 0).astype(int)  # Binary target for classifier
-    y_regressor = train_data["ClaimAmount"]  # Continuous target for regressor
+    y = train_data["ClaimAmount"]
 
-    # Split for classifier evaluation
-    X_train_cls, X_test_cls, y_train_cls, y_test_cls = train_test_split(X, y_classifier, test_size=0.2, random_state=42)
-
-    # Split for regressor evaluation
-    X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(
-        train_data[train_data["ClaimAmount"] > 0].drop(columns=["ClaimAmount", "rowIndex"]),
-        train_data[train_data["ClaimAmount"] > 0]["ClaimAmount"],
-        test_size=0.2,
-        random_state=42,
+    # Split the dataset into training and testing subsets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
     )
+
+    y_train_classifier = (y_train > 0).astype(int)
+    y_test_classifier = (y_test > 0).astype(int)
+
+    y_train_regressor = y_train
+    y_test_regressor = y_test
 
     # Train classifier
     classifier_pipeline_steps = []
     for step in classifier_config["preprocessing"]:
         if isinstance(step, BalanceClasses):
             print("Applying class balancing during evaluation...")
-            step = step.fit(X_train_cls, y_train_cls)
-            X_train_cls, y_train_cls = step.transform(X_train_cls, y_train_cls)
+            step = step.fit(X_train, y_train_classifier)
+            X_train, y_train_classifier = step.transform(X_train, y_train_classifier)
         else:
             classifier_pipeline_steps.append((f"step_{len(classifier_pipeline_steps)}", step))
     classifier_pipeline_steps.append(("classifier", classifier_config["model"]))
     classifier_pipeline = Pipeline(classifier_pipeline_steps)
-    classifier_pipeline.fit(X_train_cls, y_train_cls)
+    classifier_pipeline.fit(X_train, y_train_classifier)
 
     # Evaluate classifier
-    y_pred_cls = classifier_pipeline.predict(X_test_cls)
-    f1 = f1_score(y_test_cls, y_pred_cls)
+    y_pred_classifier = classifier_pipeline.predict(X_test)
+    f1 = f1_score(y_test_classifier, y_pred_classifier)
     print(f"Classifier F1 score: {f1}")
 
-    # Train regressor
+    # Train regressor on non-zero ClaimAmount rows in the training data
+    # ################################# (jk ignore this for now) removed filtering so that it trains on everything 
+    non_zero_train_indices = y_train_classifier[y_train_classifier > 0].index
+    X_train_reg = X_train.loc[non_zero_train_indices]
+    y_train_reg = train_data.loc[non_zero_train_indices, "ClaimAmount"]
+
     regressor_pipeline_steps = [
         *[(f"step_{i}", step) for i, step in enumerate(regressor_config["preprocessing"])],
         ("regressor", regressor_config["model"]),
@@ -375,10 +378,18 @@ def evaluate_config_on_trainset(train_data, classifier_config, regressor_config)
     regressor_pipeline = Pipeline(regressor_pipeline_steps)
     regressor_pipeline.fit(X_train_reg, y_train_reg)
 
-    # Evaluate regressor
+    # Predict ClaimAmount for non-zero predictions
+    non_zero_test_indices = y_test_classifier[y_pred_classifier > 0].index
+    X_test_reg = X_test.loc[non_zero_test_indices]
     y_pred_reg = regressor_pipeline.predict(X_test_reg)
-    mae = mean_absolute_error(y_test_reg, y_pred_reg)
-    print(f"Regressor MAE: {mae}")
+
+    # Combine predictions
+    combined_predictions = pd.Series(0, index=y_test_classifier.index, dtype=float)  # Initialize all predictions as 0
+    combined_predictions.loc[non_zero_test_indices] = y_pred_reg  # Set non-zero predictions
+
+    # Evaluate combined predictions
+    mae = mean_absolute_error(y_test_regressor, combined_predictions)
+    print(f"Combined Model MAE: {mae}")
 
     return f1, mae
 
