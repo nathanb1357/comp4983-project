@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+import json
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -6,10 +8,13 @@ from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
-# File paths (adjust as per your directory)
+# File paths (adjust if necessary)
 train_file = "original_data/trainingset.csv"
 test_file = "original_data/testset.csv"
-final_output_file = "edited_data/final_submission.csv"
+output_dir = "./out"
+
+# Ensure output directory exists
+os.makedirs(output_dir, exist_ok=True)
 
 # Preprocessing step for class balancing with undersampling
 class BalanceClasses:
@@ -48,6 +53,9 @@ class BalanceClasses:
         print(f"Balanced dataset size: {len(balanced_indices)}")
         return X.loc[balanced_indices], y.loc[balanced_indices]
 
+    def __repr__(self):
+        return f"BalanceClasses(pos_ratio={self.pos_ratio})"
+
 # Example configurations
 configurations = [
     {
@@ -63,8 +71,50 @@ configurations = [
             "model": RandomForestRegressor(n_estimators=500, max_depth=40, max_features="sqrt"),
             "preprocessing": [SelectKBest(f_classif, k=15)],
         },
-    }
+    },
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(n_neighbors=20, weights="distance"),
+            "preprocessing": [
+                BalanceClasses(pos_ratio=0.2),
+                SelectKBest(f_classif, k=13),
+                StandardScaler(),
+            ],
+        },
+        "regressor": {
+            "model": RandomForestRegressor(n_estimators=500, max_depth=40, max_features="sqrt"),
+            "preprocessing": [SelectKBest(f_classif, k=15)],
+        },
+    },
+    {
+        "classifier": {
+            "model": KNeighborsClassifier(n_neighbors=20, weights="distance"),
+            "preprocessing": [
+                BalanceClasses(pos_ratio=0.2),
+                SelectKBest(f_classif, k=13),
+                StandardScaler(),
+            ],
+        },
+        "regressor": {
+            "model": RandomForestRegressor(n_estimators=500, max_depth=40, max_features="sqrt"),
+            "preprocessing": [SelectKBest(f_classif, k=15)],
+        },
+    },
+    # Add additional configurations here if necessary
 ]
+
+# Helper function to serialize configurations as string representations
+def serialize_configuration(config):
+    return {
+        "classifier": {
+            "model": repr(config["classifier"]["model"]),
+            "preprocessing": [repr(step) for step in config["classifier"]["preprocessing"]],
+        },
+        "regressor": {
+            "model": repr(config["regressor"]["model"]),
+            "preprocessing": [repr(step) for step in config["regressor"]["preprocessing"]],
+        },
+    }
 
 # Train Classifier
 def train_classifier(train_data, classifier_config):
@@ -113,16 +163,23 @@ def train_regressor(train_data, regressor_config):
     return pipeline
 
 # Main workflow
-for config in configurations:
+map_json = {}
+for config_index, config in enumerate(configurations, start=1):
+    print(f"Processing configuration {config_index}...")
+
+    # Load training data
     print("Loading training data...")
     train_data = pd.read_csv(train_file)
 
+    # Train classifier
     print("Starting classifier training...")
     classifier = train_classifier(train_data, config["classifier"])
 
+    # Train regressor
     print("Starting regressor training...")
     regressor = train_regressor(train_data, config["regressor"])
 
+    # Load test data
     print("Loading test data...")
     test_data = pd.read_csv(test_file)
 
@@ -146,6 +203,19 @@ for config in configurations:
     # Restore original rowIndex order
     test_data = test_data.sort_values("rowIndex")
 
-    print(f"Saving final results to {final_output_file}...")
-    test_data[["rowIndex", "ClaimAmount"]].to_csv(final_output_file, index=False)
-    print("Results saved successfully.")
+    # Save results to a CSV file
+    output_filename = f"1_3_{config_index}.csv"
+    output_filepath = os.path.join(output_dir, output_filename)
+    test_data[["rowIndex", "ClaimAmount"]].to_csv(output_filepath, index=False)
+
+    # Add serialized configuration to the map.json
+    map_json[output_filename] = serialize_configuration(config)
+
+    print(f"Results for configuration {config_index} saved to {output_filepath}.")
+
+# Save the map.json file
+map_filepath = os.path.join(output_dir, "map.json")
+with open(map_filepath, "w") as f:
+    json.dump(map_json, f, indent=4)
+
+print(f"Configuration map saved to {map_filepath}.")
