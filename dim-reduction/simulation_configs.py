@@ -82,16 +82,16 @@ simulation_configs = {
                     "model__min_samples_split": [2, 5]
                 }
             },
-            "SVR": {
-                "pipeline": {
-                    "scaler": True,
-                    "model": "SVR"
-                },
-                "params": {
-                    "model__C": [0.1, 1, 10],
-                    "model__kernel": ["linear", "rbf"]
-                }
-            },
+            # "SVR": {
+            #     "pipeline": {
+            #         "scaler": True,
+            #         "model": "SVR"
+            #     },
+            #     "params": {
+            #         "model__C": [0.1, 1, 4],
+            #         "model__kernel": ["linear", "rbf"]
+            #     }
+            # },
             "GradientBoosting": {
                 "pipeline": {
                     "scaler": False,
@@ -100,7 +100,7 @@ simulation_configs = {
                 "params": {
                     "model__n_estimators": [50, 100],
                     "model__learning_rate": [0.01, 0.1],
-                    "model__max_depth": [3, 5]
+                    # "model__max_depth": [3, 5]
                 }
             },
             "LinearRegression": {
@@ -120,7 +120,7 @@ simulation_configs = {
                 },
                 "params": {
                     "model__alpha": [0.1, 1.0, 10.0],
-                    "model__solver": ["auto", "saga"]
+                    # "model__solver": ["auto", "saga"]
                 }
             },
             "Lasso": {
@@ -134,7 +134,7 @@ simulation_configs = {
                 }
             }
         },
-        "metrics": ["MSE", "MAE", "RMSE", "R2"],
+        "metrics": ["MSE", "MAE", "RMSE", "R2", "insurance_score"],
         "output_pdf": "performance_tuning_milestone1.pdf"
     },
     "milestone1-take2": {
@@ -156,7 +156,34 @@ simulation_configs = {
                 }
             }
         },
-        "metrics": ["MSE", "MAE", "RMSE", "R2"],
+        "metrics": ["MSE", "MAE", "RMSE", "R2", "insurance_score"],
+        "output_pdf": "performance_tuning_milestone1.pdf"
+    },
+    "milestone1-take3": {
+        "dataset": {
+            "path": "./original_data/trainingset.csv",
+            "target_column": "ClaimAmount",
+            "drop_columns": ["rowIndex"]
+        },
+        "models": {
+            "RandomForest": {
+                "pipeline": {
+                    "scaler": True,  # Use if scaling is necessary; RandomForest doesn't require it
+                    "model": "RandomForestRegressor"
+                },
+                "params": {
+                    "model__n_estimators": [50, 100, 150],  # More trees for better learning
+                    "model__max_depth": [None, 30],  # Explore deeper trees
+                    "model__min_samples_split": [2, 5],  # More restrictive splits
+                    "model__min_samples_leaf": [1, 3],  # Control overfitting
+                    "model__max_features": ["sqrt", "log2"],  # Feature selection
+                    "model__bootstrap": [True],  # Bootstrap sampling for bagging
+                    "model__criterion": ["squared_error"],  # Loss function
+                    "model__max_samples": [None]  # Subsampling for speed-up
+                }
+            }
+        },
+        "metrics": ["MSE", "MAE", "RMSE", "R2", "insurance_score"],
         "output_pdf": "performance_tuning_milestone1.pdf"
     }
 }
