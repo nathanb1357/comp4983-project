@@ -5,11 +5,15 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    RandomForestRegressor,
+    GradientBoostingRegressor,
+)
 from sklearn.svm import SVR  # For Support Vector Regressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, f1_score
-
+from OneHotEndoding import OneHotEncoder
 
 # File paths (adjust if necessary)
 train_file = "original_data/trainingset.csv"
@@ -19,9 +23,11 @@ output_dir = "./out"
 # Ensure output directory exists
 os.makedirs(output_dir, exist_ok=True)
 
+
 # Preprocessing step for class balancing with undersampling
 class BalanceClasses:
     """Custom preprocessing step for balancing classes via undersampling."""
+
     def __init__(self, pos_ratio):
         self.pos_ratio = pos_ratio
 
@@ -31,9 +37,9 @@ class BalanceClasses:
     def transform(self, X, y=None):
         if y is None:
             raise ValueError("y must be provided for class balancing.")
-        
+
         print("Balancing classes using undersampling...")
-        
+
         # Separate positive and negative samples
         pos_indices = y[y == 1].index
         neg_indices = y[y == 0].index
@@ -44,8 +50,12 @@ class BalanceClasses:
         # Calculate the number of negative samples to keep
         n_neg_samples = int(len(pos_indices) / self.pos_ratio)
 
-        print(f"Positive samples: {len(pos_indices)}, Negative samples before: {len(neg_indices)}")
-        print(f"Sampling {n_neg_samples} negative samples to achieve pos_ratio={self.pos_ratio}.")
+        print(
+            f"Positive samples: {len(pos_indices)}, Negative samples before: {len(neg_indices)}"
+        )
+        print(
+            f"Sampling {n_neg_samples} negative samples to achieve pos_ratio={self.pos_ratio}."
+        )
 
         # Sample negative indices
         sampled_neg_indices = neg_indices.sample(n=n_neg_samples, random_state=42)
@@ -59,14 +69,12 @@ class BalanceClasses:
     def __repr__(self):
         return f"BalanceClasses(pos_ratio={self.pos_ratio})"
 
+
 # Example configurations
 configurations = [
     {
         "classifier": {
-            "model": KNeighborsClassifier(
-                n_neighbors=20,
-                weights="distance"
-            ),
+            "model": KNeighborsClassifier(n_neighbors=20, weights="distance"),
             "preprocessing": [
                 BalanceClasses(pos_ratio=0.2),
                 SelectKBest(f_classif, k=13),
@@ -75,12 +83,20 @@ configurations = [
         },
         "regressor": {
             "model": RandomForestRegressor(
-                bootstrap=False,
-                n_estimators=500,
-                max_depth=40,
-                max_features="sqrt"
+                bootstrap=False, n_estimators=500, max_depth=40, max_features="sqrt"
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
@@ -88,10 +104,7 @@ configurations = [
     },
     {
         "classifier": {
-            "model": KNeighborsClassifier(
-                n_neighbors=15,
-                weights="distance"
-            ),
+            "model": KNeighborsClassifier(n_neighbors=15, weights="distance"),
             "preprocessing": [
                 BalanceClasses(pos_ratio=0.15),
                 SelectKBest(f_classif, k=13),
@@ -100,12 +113,20 @@ configurations = [
         },
         "regressor": {
             "model": RandomForestRegressor(
-                bootstrap=False,
-                n_estimators=500,
-                max_depth=40,
-                max_features="sqrt"
+                bootstrap=False, n_estimators=500, max_depth=40, max_features="sqrt"
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
@@ -113,10 +134,7 @@ configurations = [
     },
     {
         "classifier": {
-            "model": KNeighborsClassifier(
-                n_neighbors=1,
-                weights="uniform"
-            ),
+            "model": KNeighborsClassifier(n_neighbors=1, weights="uniform"),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
                 # scaling=False (No StandardScaler)
@@ -124,12 +142,20 @@ configurations = [
         },
         "regressor": {
             "model": RandomForestRegressor(
-                bootstrap=False,
-                n_estimators=500,
-                max_depth=40,
-                max_features="sqrt"
+                bootstrap=False, n_estimators=500, max_depth=40, max_features="sqrt"
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
@@ -137,10 +163,7 @@ configurations = [
     },
     {
         "classifier": {
-            "model": KNeighborsClassifier(
-                n_neighbors=1,
-                weights="uniform"
-            ),
+            "model": KNeighborsClassifier(n_neighbors=1, weights="uniform"),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
                 # scaling=False (No StandardScaler)
@@ -151,9 +174,20 @@ configurations = [
                 n_neighbors=800,
                 algorithm="auto",
                 p=1,  # Manhattan distance
-                weights="distance"
+                weights="distance",
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 StandardScaler(),  # scaling=True
             ],
@@ -161,22 +195,26 @@ configurations = [
     },
     {
         "classifier": {
-            "model": KNeighborsClassifier(
-                n_neighbors=1,
-                weights="uniform"
-            ),
+            "model": KNeighborsClassifier(n_neighbors=1, weights="uniform"),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
                 # scaling=False (No StandardScaler)
             ],
         },
         "regressor": {
-            "model": SVR(
-                C=1000,
-                kernel="rbf",
-                gamma="scale"
-            ),
+            "model": SVR(C=1000, kernel="rbf", gamma="scale"),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 StandardScaler(),  # scaling=True
             ],
@@ -184,10 +222,7 @@ configurations = [
     },
     {
         "classifier": {
-            "model": KNeighborsClassifier(
-                n_neighbors=1,
-                weights="uniform"
-            ),
+            "model": KNeighborsClassifier(n_neighbors=1, weights="uniform"),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
                 # scaling=False (No StandardScaler)
@@ -198,9 +233,20 @@ configurations = [
                 n_estimators=200,
                 max_depth=None,
                 max_features="log2",
-                learning_rate=0.01
+                learning_rate=0.01,
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
@@ -213,7 +259,7 @@ configurations = [
                 n_estimators=200,
                 max_depth=None,
                 max_features="sqrt",
-                criterion="entropy"
+                criterion="entropy",
             ),
             "preprocessing": [
                 BalanceClasses(pos_ratio=0.1),
@@ -223,12 +269,20 @@ configurations = [
         },
         "regressor": {
             "model": RandomForestRegressor(
-                bootstrap=False,
-                n_estimators=500,
-                max_depth=40,
-                max_features="sqrt"
+                bootstrap=False, n_estimators=500, max_depth=40, max_features="sqrt"
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
@@ -240,7 +294,7 @@ configurations = [
                 class_weight="balanced",
                 n_estimators=200,
                 max_depth=None,
-                max_features="sqrt"
+                max_features="sqrt",
             ),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
@@ -249,12 +303,20 @@ configurations = [
         },
         "regressor": {
             "model": KNeighborsRegressor(
-                n_neighbors=800,
-                algorithm="auto",
-                p=1,
-                weights="distance"
+                n_neighbors=800, algorithm="auto", p=1, weights="distance"
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 StandardScaler(),  # scaling=True
             ],
@@ -266,7 +328,7 @@ configurations = [
                 class_weight="balanced",
                 n_estimators=200,
                 max_depth=None,
-                max_features="sqrt"
+                max_features="sqrt",
             ),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
@@ -274,12 +336,19 @@ configurations = [
             ],
         },
         "regressor": {
-            "model": SVR(
-                C=1000,
-                kernel="rbf",
-                gamma="scale"
-            ),
+            "model": SVR(C=1000, kernel="rbf", gamma="scale"),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
@@ -291,7 +360,7 @@ configurations = [
                 class_weight="balanced",
                 n_estimators=200,
                 max_depth=None,
-                max_features="sqrt"
+                max_features="sqrt",
             ),
             "preprocessing": [
                 SelectKBest(f_classif, k=13),
@@ -303,15 +372,27 @@ configurations = [
                 n_estimators=200,
                 max_depth=None,
                 max_features="log2",
-                learning_rate=0.01
+                learning_rate=0.01,
             ),
             "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
                 SelectKBest(f_classif, k=15),
                 # scaling=False (No StandardScaler)
             ],
         },
     },
 ]
+
 
 # Helper function to serialize configurations as string representations
 def serialize_configuration(config):
@@ -321,11 +402,17 @@ def serialize_configuration(config):
     return {
         "classifier": {
             "model": clean_string(repr(config["classifier"]["model"])),
-            "preprocessing": [clean_string(repr(step)) for step in config["classifier"]["preprocessing"]],
+            "preprocessing": [
+                clean_string(repr(step))
+                for step in config["classifier"]["preprocessing"]
+            ],
         },
         "regressor": {
             "model": clean_string(repr(config["regressor"]["model"])),
-            "preprocessing": [clean_string(repr(step)) for step in config["regressor"]["preprocessing"]],
+            "preprocessing": [
+                clean_string(repr(step))
+                for step in config["regressor"]["preprocessing"]
+            ],
         },
     }
 
@@ -355,7 +442,9 @@ def evaluate_config_on_trainset(train_data, classifier_config, regressor_config)
             step = step.fit(X_train, y_train_classifier)
             X_train, y_train_classifier = step.transform(X_train, y_train_classifier)
         else:
-            classifier_pipeline_steps.append((f"step_{len(classifier_pipeline_steps)}", step))
+            classifier_pipeline_steps.append(
+                (f"step_{len(classifier_pipeline_steps)}", step)
+            )
     classifier_pipeline_steps.append(("classifier", classifier_config["model"]))
     classifier_pipeline = Pipeline(classifier_pipeline_steps)
     classifier_pipeline.fit(X_train, y_train_classifier)
@@ -366,13 +455,16 @@ def evaluate_config_on_trainset(train_data, classifier_config, regressor_config)
     print(f"Classifier F1 score: {f1}")
 
     # Train regressor on non-zero ClaimAmount rows in the training data
-    # ################################# (jk ignore this for now) removed filtering so that it trains on everything 
+    # ################################# (jk ignore this for now) removed filtering so that it trains on everything
     non_zero_train_indices = y_train_classifier[y_train_classifier > 0].index
     X_train_reg = X_train.loc[non_zero_train_indices]
     y_train_reg = train_data.loc[non_zero_train_indices, "ClaimAmount"]
 
     regressor_pipeline_steps = [
-        *[(f"step_{i}", step) for i, step in enumerate(regressor_config["preprocessing"])],
+        *[
+            (f"step_{i}", step)
+            for i, step in enumerate(regressor_config["preprocessing"])
+        ],
         ("regressor", regressor_config["model"]),
     ]
     regressor_pipeline = Pipeline(regressor_pipeline_steps)
@@ -384,14 +476,19 @@ def evaluate_config_on_trainset(train_data, classifier_config, regressor_config)
     y_pred_reg = regressor_pipeline.predict(X_test_reg)
 
     # Combine predictions
-    combined_predictions = pd.Series(0, index=y_test_classifier.index, dtype=float)  # Initialize all predictions as 0
-    combined_predictions.loc[non_zero_test_indices] = y_pred_reg  # Set non-zero predictions
+    combined_predictions = pd.Series(
+        0, index=y_test_classifier.index, dtype=float
+    )  # Initialize all predictions as 0
+    combined_predictions.loc[non_zero_test_indices] = (
+        y_pred_reg  # Set non-zero predictions
+    )
 
     # Evaluate combined predictions
     mae = mean_absolute_error(y_test_regressor, combined_predictions)
     print(f"Combined Model MAE: {mae}")
 
     return f1, mae
+
 
 # Train Classifier
 def train_classifier(train_data, classifier_config):
@@ -419,17 +516,23 @@ def train_classifier(train_data, classifier_config):
     print("Classifier training complete.")
     return pipeline
 
+
 # Train Regressor
 def train_regressor(train_data, regressor_config):
     print("Training regressor...")
-    train_data = train_data[train_data["ClaimAmount"] > 0]  # Drop rows where ClaimAmount = 0
+    train_data = train_data[
+        train_data["ClaimAmount"] > 0
+    ]  # Drop rows where ClaimAmount = 0
     print(f"Training regressor with {len(train_data)} rows (ClaimAmount > 0).")
     X = train_data.drop(columns=["ClaimAmount", "rowIndex"])  # Exclude "rowIndex"
     y = train_data["ClaimAmount"]
 
     pipeline_steps = [
-        *[(f"step_{i}", step) for i, step in enumerate(regressor_config["preprocessing"])],
-        ("regressor", regressor_config["model"])
+        *[
+            (f"step_{i}", step)
+            for i, step in enumerate(regressor_config["preprocessing"])
+        ],
+        ("regressor", regressor_config["model"]),
     ]
 
     # Build and train the pipeline
@@ -437,6 +540,7 @@ def train_regressor(train_data, regressor_config):
     pipeline.fit(X, y)
     print("Regressor training complete.")
     return pipeline
+
 
 # Main workflow
 map_json = {}
@@ -448,7 +552,9 @@ for config_index, config in enumerate(configurations, start=1):
     train_data = pd.read_csv(train_file)
 
     # Evaluate on train/test split
-    f1, mae = evaluate_config_on_trainset(train_data, config["classifier"], config["regressor"])
+    f1, mae = evaluate_config_on_trainset(
+        train_data, config["classifier"], config["regressor"]
+    )
 
     # Train classifier
     print("Starting classifier training...")
@@ -483,7 +589,7 @@ for config_index, config in enumerate(configurations, start=1):
     test_data = test_data.sort_values("rowIndex")
 
     # Save results to a CSV file
-    output_filename = f"2_3_{config_index}.csv"
+    output_filename = f"3_3_{config_index}.csv"
     output_filepath = os.path.join(output_dir, output_filename)
     test_data[["rowIndex", "ClaimAmount"]].to_csv(output_filepath, index=False)
 
