@@ -1,0 +1,402 @@
+import pandas as pd
+import os
+import json
+from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    RandomForestRegressor,
+    GradientBoostingRegressor,
+)
+from sklearn.svm import SVR  # For Support Vector Regressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, f1_score
+
+# File paths (adjust if necessary)
+train_file = "original_data/trainingset.csv"
+test_file = "original_data/testset.csv"
+output_dir = "./out"
+
+# Ensure output directory exists
+os.makedirs(output_dir, exist_ok=True)
+
+
+class OneHotEncoder:
+    """Custom preprocessing step for one-hot encoding specified columns."""
+
+    def __init__(self, columns_to_encode):
+        """
+        Initialize the OneHotEncoder.
+
+        Parameters:
+        -----------
+        columns_to_encode : list
+            List of column indices to one-hot encode
+        """
+        self.columns_to_encode = columns_to_encode
+        self.column_names = None
+        self.unique_values = {}
+
+    def fit(self, X, y=None):
+        """
+        Fit the encoder by learning the unique values in each specified column.
+
+        Parameters:
+        -----------
+        X : pandas DataFrame
+            Input features to fit the encoder
+        y : array-like, optional
+            Target variable (not used in this transformer)
+
+        Returns:
+        --------
+        self
+        """
+        # Store original column names
+        self.column_names = X.columns
+
+        # For each column to encode, store its unique values
+        for col_name in self.columns_to_encode:
+            self.unique_values[col_name] = sorted(X[col_name].unique())
+
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Transform the data by one-hot encoding the specified columns.
+
+        Parameters:
+        -----------
+        X : pandas DataFrame
+            Input features to transform
+        y : array-like, optional
+            Target variable (not used in this transformer)
+
+        Returns:
+        --------
+        pandas DataFrame
+            Transformed DataFrame with one-hot encoded features
+        """
+        # Make a copy of the input DataFrame
+        X_transformed = X.copy()
+
+        # Process each column that needs to be encoded
+        for col_idx in self.columns_to_encode:
+            try:
+                col_name = self.column_names[col_idx]
+
+                # Create dummy variables for the current column
+                dummies = pd.get_dummies(
+                    X_transformed.iloc[:, col_idx], prefix=f"{col_name}", dtype=int
+                )
+
+                # Drop the original column and add the dummy variables
+                X_transformed = X_transformed.drop(columns=[col_name])
+                X_transformed = pd.concat([X_transformed, dummies], axis=1)
+            except:
+                pass
+
+        return X_transformed
+
+
+# Preprocessing step for class balancing with undersampling
+class BalanceClasses:
+    """Custom preprocessing step for balancing classes via undersampling."""
+
+    def __init__(self, pos_ratio):
+        self.pos_ratio = pos_ratio
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        if y is None:
+            raise ValueError("y must be provided for class balancing.")
+
+        print("Balancing classes using undersampling...")
+
+        # Separate positive and negative samples
+        pos_indices = y[y == 1].index
+        neg_indices = y[y == 0].index
+
+        # Convert neg_indices to a Pandas Series for sampling
+        neg_indices = pd.Series(neg_indices)
+
+        # Calculate the number of negative samples to keep
+        n_neg_samples = int(len(pos_indices) / self.pos_ratio)
+
+        print(
+            f"Positive samples: {len(pos_indices)}, Negative samples before: {len(neg_indices)}"
+        )
+        print(
+            f"Sampling {n_neg_samples} negative samples to achieve pos_ratio={self.pos_ratio}."
+        )
+
+        # Sample negative indices
+        sampled_neg_indices = neg_indices.sample(n=n_neg_samples, random_state=42)
+
+        # Combine positive and sampled negative indices
+        balanced_indices = pos_indices.union(sampled_neg_indices)
+
+        print(f"Balanced dataset size: {len(balanced_indices)}")
+        return X.loc[balanced_indices], y.loc[balanced_indices]
+
+    def __repr__(self):
+        return f"BalanceClasses(pos_ratio={self.pos_ratio})"
+
+
+# Example configurations
+configurations = [
+    {
+        "classifier": {
+            "model": RandomForestClassifier(
+                class_weight="balanced",
+                n_estimators=200,
+                max_depth=None,
+                max_features="sqrt",
+            ),
+            "preprocessing": [
+                SelectKBest(f_classif, k=13),
+                # scaling=False (No StandardScaler)
+            ],
+        },
+        "regressor": {
+            "model": KNeighborsRegressor(
+                n_neighbors=700, algorithm="auto", p=1, weights="distance"
+            ),
+            "preprocessing": [
+                OneHotEncoder(
+                    columns_to_encode=[
+                        "feature3",
+                        "feature7",
+                        "feature11",
+                        "feature13",
+                        "feature14",
+                        "feature15",
+                        "feature16",
+                    ]
+                ),
+                SelectKBest(f_classif, k=15),
+                StandardScaler(),  # scaling=True
+            ],
+        },
+    },
+]
+
+
+# Helper function to serialize configurations as string representations
+def serialize_configuration(config):
+    def clean_string(s):
+        return " ".join(s.replace("\n", " ").split())
+
+    return {
+        "classifier": {
+            "model": clean_string(repr(config["classifier"]["model"])),
+            "preprocessing": [
+                clean_string(repr(step))
+                for step in config["classifier"]["preprocessing"]
+            ],
+        },
+        "regressor": {
+            "model": clean_string(repr(config["regressor"]["model"])),
+            "preprocessing": [
+                clean_string(repr(step))
+                for step in config["regressor"]["preprocessing"]
+            ],
+        },
+    }
+
+
+def evaluate_config_on_trainset(train_data, classifier_config, regressor_config):
+    print("Evaluating combined classifier and regressor model...")
+    # Split the dataset into features and targets
+    X = train_data.drop(columns=["ClaimAmount", "rowIndex"])
+    y = train_data["ClaimAmount"]
+
+    # Split the dataset into training and testing subsets
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    y_train_classifier = (y_train > 0).astype(int)
+    y_test_classifier = (y_test > 0).astype(int)
+
+    y_train_regressor = y_train
+    y_test_regressor = y_test
+
+    # Train classifier
+    classifier_pipeline_steps = []
+    for step in classifier_config["preprocessing"]:
+        if isinstance(step, BalanceClasses):
+            print("Applying class balancing during evaluation...")
+            step = step.fit(X_train, y_train_classifier)
+            X_train, y_train_classifier = step.transform(X_train, y_train_classifier)
+        else:
+            classifier_pipeline_steps.append(
+                (f"step_{len(classifier_pipeline_steps)}", step)
+            )
+    classifier_pipeline_steps.append(("classifier", classifier_config["model"]))
+    classifier_pipeline = Pipeline(classifier_pipeline_steps)
+    classifier_pipeline.fit(X_train, y_train_classifier)
+
+    # Evaluate classifier
+    y_pred_classifier = classifier_pipeline.predict(X_test)
+    f1 = f1_score(y_test_classifier, y_pred_classifier)
+    print(f"Classifier F1 score: {f1}")
+
+    # Train regressor on non-zero ClaimAmount rows in the training data
+    # ################################# (jk ignore this for now) removed filtering so that it trains on everything
+    non_zero_train_indices = y_train_classifier[y_train_classifier > 0].index
+    X_train_reg = X_train.loc[non_zero_train_indices]
+    y_train_reg = train_data.loc[non_zero_train_indices, "ClaimAmount"]
+
+    regressor_pipeline_steps = [
+        *[
+            (f"step_{i}", step)
+            for i, step in enumerate(regressor_config["preprocessing"])
+        ],
+        ("regressor", regressor_config["model"]),
+    ]
+    regressor_pipeline = Pipeline(regressor_pipeline_steps)
+    regressor_pipeline.fit(X_train_reg, y_train_reg)
+
+    # Predict ClaimAmount for non-zero predictions
+    non_zero_test_indices = y_test_classifier[y_pred_classifier > 0].index
+    X_test_reg = X_test.loc[non_zero_test_indices]
+    y_pred_reg = regressor_pipeline.predict(X_test_reg)
+
+    # Combine predictions
+    combined_predictions = pd.Series(
+        0, index=y_test_classifier.index, dtype=float
+    )  # Initialize all predictions as 0
+    combined_predictions.loc[non_zero_test_indices] = (
+        y_pred_reg  # Set non-zero predictions
+    )
+
+    # Evaluate combined predictions
+    mae = mean_absolute_error(y_test_regressor, combined_predictions)
+    print(f"Combined Model MAE: {mae}")
+
+    return f1, mae
+
+
+# Train Classifier
+def train_classifier(train_data, classifier_config):
+    print("Training classifier...")
+    X = train_data.drop(columns=["ClaimAmount", "rowIndex"])  # Exclude "rowIndex"
+    y = (train_data["ClaimAmount"] > 0).astype(int)
+
+    pipeline_steps = []
+
+    # Add preprocessing steps
+    for step in classifier_config["preprocessing"]:
+        if isinstance(step, BalanceClasses):
+            print("Applying class balancing step...")
+            step = step.fit(X, y)
+            X, y = step.transform(X, y)
+        else:
+            pipeline_steps.append((f"step_{len(pipeline_steps)}", step))
+
+    # Add classifier model
+    pipeline_steps.append(("classifier", classifier_config["model"]))
+
+    # Build and train the pipeline
+    pipeline = Pipeline(pipeline_steps)
+    pipeline.fit(X, y)
+    print("Classifier training complete.")
+    return pipeline
+
+
+# Train Regressor
+def train_regressor(train_data, regressor_config):
+    print("Training regressor...")
+    train_data = train_data[
+        train_data["ClaimAmount"] > 0
+    ]  # Drop rows where ClaimAmount = 0
+    print(f"Training regressor with {len(train_data)} rows (ClaimAmount > 0).")
+    X = train_data.drop(columns=["ClaimAmount", "rowIndex"])  # Exclude "rowIndex"
+    y = train_data["ClaimAmount"]
+
+    pipeline_steps = [
+        *[
+            (f"step_{i}", step)
+            for i, step in enumerate(regressor_config["preprocessing"])
+        ],
+        ("regressor", regressor_config["model"]),
+    ]
+
+    # Build and train the pipeline
+    pipeline = Pipeline(pipeline_steps)
+    pipeline.fit(X, y)
+    print("Regressor training complete.")
+    return pipeline
+
+
+# Main workflow
+map_json = {}
+for config_index, config in enumerate(configurations, start=1):
+    print(f"Processing configuration {config_index}...")
+
+    # Load training data
+    print("Loading training data...")
+    train_data = pd.read_csv(train_file)
+
+    # Evaluate on train/test split
+    f1, mae = evaluate_config_on_trainset(
+        train_data, config["classifier"], config["regressor"]
+    )
+
+    # Train classifier
+    print("Starting classifier training...")
+    classifier = train_classifier(train_data, config["classifier"])
+
+    # Train regressor
+    print("Starting regressor training...")
+    regressor = train_regressor(train_data, config["regressor"])
+
+    # Load test data
+    print("Loading test data...")
+    test_data = pd.read_csv(test_file)
+
+    # Save rowIndex for final ordering
+    test_data_row_index = test_data["rowIndex"]
+
+    print("Predicting ClaimAmount for test data...")
+    # Predict ClaimAmount
+    test_features = test_data.drop(columns=["rowIndex"])
+    test_data["ClaimAmount"] = 0  # Initialize all rows as non-claim
+
+    # Identify rows predicted as claims
+    claim_indices = classifier.predict(test_features).astype(bool)
+
+    if claim_indices.sum() > 0:
+        # Predict continuous values for claims
+        continuous_predictions = regressor.predict(test_features.loc[claim_indices])
+        test_data.loc[claim_indices, "ClaimAmount"] = continuous_predictions
+
+    print("Combining and sorting results...")
+    # Restore original rowIndex order
+    test_data = test_data.sort_values("rowIndex")
+
+    # Save results to a CSV file
+    output_filename = f"3_3_{config_index}.csv"
+    output_filepath = os.path.join(output_dir, output_filename)
+    test_data[["rowIndex", "ClaimAmount"]].to_csv(output_filepath, index=False)
+
+    # Add serialized configuration and metrics to the map.json
+    map_json[output_filename] = {
+        **serialize_configuration(config),
+        "F1_score": f1,
+        "MAE": mae,
+    }
+
+    print(f"Results for configuration {config_index} saved to {output_filepath}.")
+
+# Save the map.json file
+map_filepath = os.path.join(output_dir, "map.json")
+with open(map_filepath, "w") as f:
+    json.dump(map_json, f, indent=4)
+
+print(f"Configuration map saved to {map_filepath}.")
